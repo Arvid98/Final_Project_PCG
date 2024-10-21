@@ -177,11 +177,11 @@ MonoBehaviour:
     top: 1
     bottom: 1
     weight: 0
-  width: 16
-  height: 16
-  candidateSelection: 0
+  width: 24
+  height: 24
+  candidateSelection: 2
   tileSelection: 0
-  timePerStep: 0.001
+  timePerStep: 0.005
 --- !u!4 &144755299
 Transform:
   m_ObjectHideFlags: 0

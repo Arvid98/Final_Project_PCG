@@ -33,12 +33,22 @@ public struct Point
 
     public static bool operator ==(Point p1, Point p2)
     {
-        return p1.x == p2.x && p1.y == p2.y;
+        if (p1.x != p2.x || p1.y != p2.y)
+            return false;
+
+        return true;
+
+        //return p1.x == p2.x && p1.y == p2.y;
     }
 
     public static bool operator !=(Point p1, Point p2)
     {
-        return !(p1 == p2);
+        if (p1.x == p2.x || p1.y == p2.y)
+            return false;
+
+        return true;
+
+        //return !(p1 == p2);
     }
 
     public override bool Equals(object obj)

@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(Renderer))]
@@ -9,6 +10,8 @@ public class WFCDisplay : MonoBehaviour
     Renderer rend;
     Texture2D texture;
     WFC wfc;
+
+    bool textureHasChanged;
 
     void OnEnable()
     {
@@ -42,10 +45,19 @@ public class WFCDisplay : MonoBehaviour
         }
     }
 
+    void FixedUpdate()
+    {
+        if (!textureHasChanged)
+            return;
+
+        textureHasChanged = false;
+        texture.Apply();
+    }
+
     void Set(int x, int y, Color color)
     {
+        textureHasChanged = true;
         texture.SetPixel(x, y, color);
-        texture.Apply();
     }
 
     void OnCellChanged(int x, int y, int id)

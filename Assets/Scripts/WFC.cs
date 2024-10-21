@@ -221,7 +221,7 @@ public class WFC : MonoBehaviour
         }
 
         // returns normal random if weights didn't work
-        Debug.Log("Weighed random didn't work. Returning normal random.");
+        Debug.Log("WFC - Weighted random didn't work. Returning normal random.");
         return tiles[Random.Range(0, tiles.Length)];
     }
 
@@ -232,7 +232,7 @@ public class WFC : MonoBehaviour
 
         if (superPositions.Count == 0)
         {
-            Debug.Log("Tried to collapse but had no solutions.");
+            Debug.Log("WFC - Tried to collapse but had no solutions.");
             play = false;
             return;
         }
