@@ -1,31 +1,30 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor;
 using UnityEngine;
+using System;
+using Random = UnityEngine.Random;
 
 public class WFC : MonoBehaviour
 {
-    [SerializeField]
-    int width;
-    [SerializeField]
-    int height;
-    [SerializeField]
-    WFCTile[] tiles;
-    [SerializeField]
-    Material defaultMaterial;
-    [SerializeField]
-    float timePerStep;
-    [SerializeField]
-    int placeTile;
-    [SerializeField]
-    CandidateSelection candidateSelection;
-    [SerializeField]
-    TileSelection tileSelection;
+    [SerializeField] WFCTile[] tiles;
+    [SerializeField] int width = 16;
+    [SerializeField] int height = 16;
+    [SerializeField] CandidateSelection candidateSelection;
+    [SerializeField] TileSelection tileSelection;
+    [SerializeField] float timePerStep = 0.01f;
 
-    GameObject[,] gameObjects;
     List<WFCTile>[,] cells;
     bool[,] collapsed;
+
+    float timer;
+    bool play;
+
+    /// <summary>
+    /// Parameters: x, y, id
+    /// </summary>
+    public Action<int, int, int> OnCellChanged;
+    public int Width => width;
+    public int Height => height;
 
     public enum CandidateSelection
     {
@@ -44,22 +43,6 @@ public class WFC : MonoBehaviour
     [MakeButton("Clear grid")]
     void Clear()
     {
-        DestroyCells();
-        CreateCells();
-        Display();
-    }
-
-    void DestroyCells()
-    {
-        while (transform.childCount > 0)
-        {
-            DestroyImmediate(transform.GetChild(0).gameObject);
-        }
-    }
-
-    void CreateCells()
-    {
-        gameObjects = new GameObject[width, height];
         cells = new List<WFCTile>[width, height];
         collapsed = new bool[width, height];
         pStack = new();
@@ -68,123 +51,28 @@ public class WFC : MonoBehaviour
         {
             for (int y = 0; y < height; y++)
             {
-                GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                go.transform.position = WorldPosition(new Point(x, y));
-                go.transform.SetParent(transform);
-
-                if (go.TryGetComponent(out Renderer r))
-                    r.material = defaultMaterial;
-
-                gameObjects[x, y] = go;
                 cells[x, y] = tiles.ToList();
-            }
-        }
-    }
-
-    Vector3 WorldPosition(Point cell)
-    {
-        return new Vector3(cell.x - (width - 1f) / 2f, cell.y - (height - 1f) / 2f, 0);
-    }
-
-    Point Cell(Vector3 worldPosition)
-    {
-        return new Point((int)(worldPosition.x + (width - 1f) / 2f), (int)(worldPosition.y + (height - 1f) / 2f));
-    }
-
-    void Display()
-    {
-        NullCheck();
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                Point p = new Point(x, y);
-
-                if (!gameObjects[x, y].TryGetComponent(out Renderer r))
-                    continue;
-
-                if (IsCollapsed(p))
-                {
-                    WFCTile tile = Tile(p);
-
-                    if (tile == null)
-                        continue;
-
-                    r.material = tile.material;
-                    continue;
-                }
-
-                r.material = defaultMaterial;
+                OnCellChanged?.Invoke(x, y, -1);
             }
         }
     }
 
     void NullCheck()
     {
-        if (cells == null || gameObjects == null || collapsed == null)
+        if (cells == null || collapsed == null)
             Clear();
-    }
-
-    [MakeButton("Get rules from grid")]
-    void GetRules()
-    {
-        if (!EditorApplication.isPlaying)
-            return;
-
-        NullCheck();
-        ResetRules();
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                if (!collapsed[x, y])
-                    continue;
-
-                SetRules(new Point(x, y));
-            }
-        }
-
-    }
-
-    void ResetRules()
-    {
-        foreach (var tile in tiles)
-        {
-            tile.left = new();
-            tile.right = new();
-            tile.top = new();
-            tile.bottom = new();
-        }
-    }
-
-    void SetRules(Point p)
-    {
-        foreach (var dir in ValidDirs(p))
-        {
-            Point nP = p + dir;
-            if (!collapsed[nP.x, nP.y])
-                continue;
-
-            List<Material> neighborList = new();
-            if (dir == new Point(1, 0))
-                neighborList = cells[p.x, p.y][0].right;
-            if (dir == new Point(-1, 0))
-                neighborList = cells[p.x, p.y][0].left;
-            if (dir == new Point(0, 1))
-                neighborList = cells[p.x, p.y][0].top;
-            if (dir == new Point(0, -1))
-                neighborList = cells[p.x, p.y][0].bottom;
-
-            if (!neighborList.Contains(cells[nP.x, nP.y][0].material))
-                neighborList.Add(cells[nP.x, nP.y][0].material);
-        }
     }
 
     [MakeButton]
     void Play()
     {
+        if (!Application.isPlaying)
+        {
+            Debug.Log("WFC - Can only play in play mode");
+
+            return;
+        }
+
         play = true;
     }
 
@@ -201,6 +89,7 @@ public class WFC : MonoBehaviour
 
         timer += Time.deltaTime;
 
+        // this is bad if one step actually takes longer to do than timePerStep, can we check that using some system time?
         while (play && timer >= timePerStep)
         {
             timer -= timePerStep;
@@ -209,91 +98,24 @@ public class WFC : MonoBehaviour
         }
     }
 
-    void TryPlaceTile()
-    {
-        NullCheck();
-
-        if (Input.mouseScrollDelta.y < 0)
-            placeTile--;
-        if (Input.mouseScrollDelta.y > 0)
-            placeTile++;
-
-        if (placeTile > tiles.Length - 1)
-            placeTile = 0;
-        if (placeTile < 0)
-            placeTile = tiles.Length - 1;
-
-        bool mouse0 = Input.GetKey(KeyCode.Mouse0);
-        bool mouse1 = Input.GetKey(KeyCode.Mouse1);
-
-        if (!mouse0 && !mouse1)
-            return;
-
-        Point cell = MouseToCell();
-        if (!IsValid(cell))
-            return;
-
-        if (mouse0)
-        {
-            if (IsCollapsed(cell))
-                Uncollapse(cell);
-
-            cells[cell.x, cell.y].Clear();
-            cells[cell.x, cell.y].Add(tiles[placeTile]);
-            Collapse(cell);
-            pStack.Push(cell);
-        }
-        if (mouse1 && IsCollapsed(cell))
-        {
-            Uncollapse(cell);
-        }
-
-        Display();
-    }
-
-    void Uncollapse(Point cell)
-    {
-        cells[cell.x, cell.y] = tiles.ToList();
-        collapsed[cell.x, cell.y] = false;
-
-        foreach (var dir in ValidDirs(cell))
-        {
-            Point p = cell + dir;
-            if (collapsed[p.x, p.y])
-                pStack.Push(p);
-        }
-    }
-
-    Point MouseToCell()
-    {
-        RaycastHit hit;
-        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        if (!Physics.Raycast(ray, out hit, 100.0f))
-            return new Point(int.MaxValue, int.MaxValue);
-
-        return Cell(hit.transform.position);
-    }
-
-    bool IsValid(Point p)
-    {
-        return p.x < width && p.x > 0 && p.y < height && p.y > 0;
-    }
-
-    float timer;
-    bool play;
-
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
             play = !play;
 
         TryPlay();
-        TryPlaceTile();
     }
 
     [MakeButton]
     void Step()
     {
+        if (!Application.isPlaying)
+        {
+            Debug.Log("WFC - Can only step in play mode");
+
+            return;
+        }
+
         NullCheck();
 
         Point coords = GetLowestEntropy();
@@ -301,13 +123,12 @@ public class WFC : MonoBehaviour
         if (coords == new Point(-1, -1))
         {
             play = false;
-            Debug.Log("Done");
+            Debug.Log("WFC - Done");
             return;
         }
 
         Collapse(coords);
         Propagate(coords);
-        Display();
     }
 
     Point GetLowestEntropy()
@@ -433,6 +254,7 @@ public class WFC : MonoBehaviour
         superPositions.Clear();
         superPositions.Add(tile);
         collapsed[p.x, p.y] = true;
+        OnCellChanged?.Invoke(p.x, p.y, tile.id);
     }
 
     Stack<Point> pStack;
@@ -501,53 +323,46 @@ public class WFC : MonoBehaviour
     /// <returns></returns>
     WFCTile[] PossibleNeighbors(Point p, Point dir)
     {
-        List<Material> list = new();
+        List<int> connectors = new();
 
         foreach (var possibility in Possibilities(p))
         {
-            List<Material> tiles = new();
+            int connector = -1;
 
             if (dir == new Point(1, 0))
-                tiles = possibility.right;
+                connector = possibility.right;
             if (dir == new Point(-1, 0))
-                tiles = possibility.left;
+                connector = possibility.left;
             if (dir == new Point(0, 1))
-                tiles = possibility.top;
+                connector = possibility.top;
             if (dir == new Point(0, -1))
-                tiles = possibility.bottom;
+                connector = possibility.bottom;
 
-            foreach (var tile in tiles)
-                if (!list.Contains(tile))
-                    list.Add(tile);
+            if (!connectors.Contains(connector))
+                connectors.Add(connector);
         }
 
         List<WFCTile> tileList = new();
         foreach (var tile in tiles)
-            if (list.Contains(tile.material))
+        {
+            int connector = -1;
+
+            if (dir == new Point(1, 0))
+                connector = tile.left;
+            if (dir == new Point(-1, 0))
+                connector = tile.right;
+            if (dir == new Point(0, 1))
+                connector = tile.bottom;
+            if (dir == new Point(0, -1))
+                connector = tile.top;
+
+            if (connectors.Contains(connector))
                 if (!tileList.Contains(tile))
                     tileList.Add(tile);
+        }
 
         return tileList.ToArray();
     }
 
     bool IsCollapsed(Point p) => collapsed[p.x, p.y];
-    WFCTile Tile(Point p)
-    {
-        if (cells == null)
-            return null;
-
-        if (cells[p.x, p.y] == null)
-            return null;
-
-        if (!IsCollapsed(p))
-            return null;
-
-        if (cells[p.x, p.y].Count < 1)
-            return null;
-
-        if (cells[p.x, p.y][0] == null)
-            return null;
-
-        return cells[p.x, p.y][0];
-    }
 }

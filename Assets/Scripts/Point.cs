@@ -4,6 +4,12 @@ using UnityEngine;
 [Serializable]
 public struct Point
 {
+    public int x;
+    public int y;
+
+    public float SquareMagnitude => Mathf.Abs(Mathf.Pow(x, 2) + Mathf.Pow(y, 2));
+    public float Magnitude => Mathf.Sqrt(SquareMagnitude);
+
     public Point(int x, int y)
     {
         this.x = x;
@@ -34,12 +40,6 @@ public struct Point
     {
         return !(p1 == p2);
     }
-
-    public float SquareMagnitude => Mathf.Abs(Mathf.Pow(x, 2) + Mathf.Pow(y, 2));
-    public float Magnitude => Mathf.Sqrt(SquareMagnitude);
-
-    public int x;
-    public int y;
 
     public override bool Equals(object obj)
     {
