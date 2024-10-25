@@ -63,7 +63,7 @@ public class WFC : MonoBehaviour
             Clear();
     }
 
-    [MakeButton]
+    [MakeButton(false)]
     void Play()
     {
         if (!Application.isPlaying)
