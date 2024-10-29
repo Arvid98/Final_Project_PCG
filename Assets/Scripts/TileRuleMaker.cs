@@ -1,8 +1,11 @@
+using System;
 using UnityEngine;
 
 public class TileRuleMaker : MonoBehaviour
 {
-    
+    [SerializeField] private Renderer m_Renderer;
+    public Renderer Renderer => m_Renderer ? m_Renderer : m_Renderer = GetComponent<Renderer>();
+
     void Start()
     {
         
@@ -15,15 +18,130 @@ public class TileRuleMaker : MonoBehaviour
     }
 
     [MakeButton]
+    public void AddToList()
+    {
+        TextureArrayList list = GetComponent<TextureArrayList>();
+
+
+
+        Texture2D tex = CopyTexture(Renderer.sharedMaterial.mainTexture as Texture2D);
+
+        int n = list.Count;
+
+        list.Add(tex); //add as is
+        //add rotations
+        list.Add(ManipulateTexture(tex, Rotate90));
+        list.Add(ManipulateTexture(tex, Rotate90));
+        list.Add(ManipulateTexture(tex, Rotate90));
+
+        //currently tex is at 270 deg rot
+
+        //flip horizontaly and try its rotations
+        tex = CopyTexture(Renderer.sharedMaterial.mainTexture as Texture2D); //reset
+        list.Add(ManipulateTexture(tex,FlipH));
+        list.Add(ManipulateTexture(tex, Rotate90));
+        list.Add(ManipulateTexture(tex, Rotate90));
+        list.Add(ManipulateTexture(tex, Rotate90));
+
+        //flip vertically and try its rotations
+        tex = CopyTexture(Renderer.sharedMaterial.mainTexture as Texture2D); //reset
+        list.Add(ManipulateTexture(tex, FlipV));
+        list.Add(ManipulateTexture(tex, Rotate90));
+        list.Add(ManipulateTexture(tex, Rotate90));
+        list.Add(ManipulateTexture(tex, Rotate90));
+
+        int diff = (list.Count - n);
+
+        float weight = 1.0f / (diff > 0 ? diff : 1);
+
+        //this finds all versions of a texture, and weight.. but do not bind it to anything
+        //each successfull add should be recorded and edges(rules) added for that id..
+
+       
+
+    }
+
+    public Texture2D CopyTexture(Texture2D toCopy)
+    {
+        Texture2D tex = new Texture2D(toCopy.width, toCopy.height, toCopy.format, false);
+        tex.wrapMode = toCopy.wrapMode; // TextureWrapMode.Clamp;
+        tex.filterMode = toCopy.filterMode; //FilterMode.Point;
+
+        tex.SetPixels32(toCopy.GetPixels32());
+        tex.Apply();
+
+        return tex;
+    }
+
+    [MakeButton]
     public void RotateTexture()
     {
-        Color[] pixels = (GetComponent<Renderer>().sharedMaterial.mainTexture as Texture2D).GetPixels();
-        Texture2D texture = new Texture2D(5,5);
-        texture.SetPixels(Rotate90(pixels, 5));
-        texture.filterMode = FilterMode.Point;
-        texture.wrapMode = TextureWrapMode.Clamp;
+        Texture2D texture = Renderer.sharedMaterial.mainTexture as Texture2D;
+
+        Debug.Assert(texture != null);
+        Debug.Assert(texture.height == texture.width);
+
+        Color[] pixels = texture.GetPixels();
+        int size = texture.height;
+        texture.SetPixels(Rotate90(pixels, size));
+        //texture.filterMode = FilterMode.Point;
+        //texture.wrapMode = TextureWrapMode.Clamp;
         texture.Apply();
-        GetComponent<Renderer>().sharedMaterial.mainTexture = texture;
+        Renderer.sharedMaterial.mainTexture = texture;
+    }
+
+    [MakeButton]
+    public void FlipTextureHorizontaly()
+    {
+        ManipulateTexture(FlipH);
+    }
+
+    [MakeButton]
+    public void FlipTextureVertically()
+    {
+        ManipulateTexture(FlipV);
+    }
+
+    public void ManipulateTexture(Func<Color[],int, Color[]> action)
+    {
+        Texture2D texture = Renderer.sharedMaterial.mainTexture as Texture2D;
+
+        Debug.Assert(texture != null);
+        Debug.Assert(texture.height == texture.width);
+
+        Color[] pixels = texture.GetPixels();
+        int size = texture.height;
+
+        texture.SetPixels(action.Invoke(pixels, size));
+        //texture.filterMode = FilterMode.Point;
+        //texture.wrapMode = TextureWrapMode.Clamp;
+        texture.Apply();
+        Renderer.sharedMaterial.mainTexture = texture;
+    }
+
+    public Texture2D ManipulateTexture(Texture2D texture, Func<Color[], int, Color[]> action)
+    {
+        Color[] pixels = texture.GetPixels();
+        int size = texture.height;
+        texture.SetPixels(action.Invoke(pixels, size));
+        texture.Apply();
+        return texture;
+    }
+
+    public Texture2D ManipulateTexture(Texture2D texture, params Func<Color[], int, Color[]>[] actions)
+    {
+        Color[] pixels = texture.GetPixels();
+        int size = texture.height;
+        int length = actions.Length;
+        Color[] c = actions[0].Invoke(pixels, size);
+        for (int i = 1; i < length; i++)
+        {
+            c = actions[i].Invoke(c, size);
+        }
+
+        texture.SetPixels(c);
+        texture.Apply();
+        return texture;
     }
 
 
@@ -55,9 +173,52 @@ public class TileRuleMaker : MonoBehaviour
             }
         }
     }
+
+
+    public Color[] FlipH(Color[] pixels, int size)
+    {
+        Color[] colors = new Color[pixels.Length];
+        FlipH(pixels, size, ref colors);
+        return colors;
+    }
+
+    public static void FlipH(Color[] pixels, int size, ref Color[] result)
+    {
+        Debug.Assert(pixels.Length == result.Length);
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                int i0 = y * size + (size - x - 1);
+
+                result[i0] = pixels[y * size + x];
+            }
+        }
+    }
+
+    public Color[] FlipV(Color[] pixels, int size)
+    {
+        Color[] colors = new Color[pixels.Length];
+        FlipV(pixels, size, ref colors);
+        return colors;
+    }
+
+    public static void FlipV(Color[] pixels, int size, ref Color[] result)
+    {
+        Debug.Assert(pixels.Length == result.Length);
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                int i0 = size*(size - 1) - y * size + x;
+
+                result[i0] = pixels[y * size + x];
+            }
+        }
+    }
 }
 
-public class Edge
+public class Edge /*: IComparable<Edge>*/
 {
     Color[] edgeArray;
     public Edge(Color[] edgeArray)
@@ -101,4 +262,46 @@ public class Edge
     {
         return base.GetHashCode();
     }
+
+    //public int CompareTo(Edge other)
+    //{
+    //    int l = edgeArray.Length.CompareTo(other.edgeArray.Length);
+    //    if(l != 0) return l;
+
+    //    for (int i = 0; i < edgeArray.Length; i++)
+    //    {
+    //        edgeArray[i].
+    //        int c = edgeArray[i].CompareTo(other.edgeArray[i]);
+    //        if (c != 0) return l;
+    //    }
+    //    return 0;
+    //}
+}
+
+public readonly struct TileData
+{
+    public readonly int data;
+
+    public readonly static int vFlipBit = 0x0100;
+    public readonly static int hFlipBit = 0x0200;
+    public readonly static int rotMask = 0xF000;
+    //public readonly static int rot0 = 0x0000;
+    //public readonly static int rot90 = 0x1000;
+    //public readonly static int rot180 = 0x2000;
+    //public readonly static int rot270 = 0x3000;
+    public readonly static int texIdMask = 0x00FF;
+
+    public TileData(int texId, bool vFlip, bool hFlip, int rot)
+    {
+        int i = texId & 0x00FF;
+        i |= (vFlip ? vFlipBit : 0);
+        i |= (hFlip ? hFlipBit : 0);
+        i |= (((rot/90) << 24) & texIdMask);
+        data = i;
+    }
+
+    public int TexId => data & texIdMask;
+    public int Rot => (data >> 24) * 90;
+    public bool VFlip => (data & vFlipBit) != 0;
+    public bool HFlip => (data & hFlipBit) != 0;
 }
