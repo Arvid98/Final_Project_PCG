@@ -39,7 +39,7 @@ public class GridManager : MonoBehaviour
 
     void Start()
     {
-        //Setup();
+        Setup();
     }
 
     [MakeButton]
