@@ -6,6 +6,7 @@ public class TextureArrayList : MonoBehaviour
     [SerializeField] private List<Texture2D> list = new List<Texture2D>();
 
     public int Count => list.Count;  
+    public List<Texture2D> List => list;
 
     [MakeButton]
     public void ClearList()

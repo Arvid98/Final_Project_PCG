@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class TileRuleMaker : MonoBehaviour
@@ -6,6 +7,10 @@ public class TileRuleMaker : MonoBehaviour
     [SerializeField] private Renderer m_Renderer;
     public Renderer Renderer => m_Renderer ? m_Renderer : m_Renderer = GetComponent<Renderer>();
 
+
+    HashSet<Color[]> colors;
+    RuleList ruleList;
+    [SerializeField] List<WFCTile> tiles = new();
     void Start()
     {
         
@@ -60,6 +65,26 @@ public class TileRuleMaker : MonoBehaviour
        
 
     }
+
+
+    [MakeButton]
+
+    public void AddRules()
+    {
+        TextureArrayList tlist = GetComponent<TextureArrayList>();
+        List<Texture2D> list = tlist.List;
+        ruleList = new RuleList();
+        tiles = new();
+        for (int i = 0; i < list.Count; i++)
+        {
+            WFCTile tile = new WFCTile();
+            tile.id = i;
+            CreateRules(list[i], tile);
+            tiles.Add(tile);
+        }
+    }
+
+
 
     public Texture2D CopyTexture(Texture2D toCopy)
     {
@@ -145,12 +170,20 @@ public class TileRuleMaker : MonoBehaviour
     }
 
 
-    public void CreateRules(Texture2D texture)
+    public void CreateRules(Texture2D texture, WFCTile tile)
     {
         Color[] top = texture.GetPixels(0, 0, texture.width, 1);
         Color[] bottom = texture.GetPixels(0, texture.height-1, texture.width, 1);
         Color[] left = texture.GetPixels(0, 0, 1, texture.height);
         Color[] right = texture.GetPixels(texture.width - 1, 0, 1, texture.height);
+
+        tile.right = ruleList.GetRuleId(right);
+        tile.left = ruleList.GetRuleId(left);
+        tile.top = ruleList.GetRuleId(top);
+        tile.bottom = ruleList.GetRuleId(bottom);
+
+
+
     }
 
     public Color[] Rotate90(Color[] pixels, int size)
