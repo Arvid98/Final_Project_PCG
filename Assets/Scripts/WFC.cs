@@ -25,6 +25,29 @@ public class WFC : MonoBehaviour
     public Action<int, int, int> OnCellChanged;
     public int Width => width;
     public int Height => height;
+    public WFCTile[] Tiles { get { return tiles; } set { tiles = value; } }
+
+    /// <summary>
+    /// Null means it's not collapsed yet and doesn't have a tile.
+    /// </summary>
+    public WFCTile[,] CollapsedCells
+    {
+        get
+        {
+            WFCTile[,] cells = new WFCTile[width, height];
+
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    if (IsCollapsed(x, y))
+                        cells[x, y] = this.cells[x, y][0];
+                }
+            }
+
+            return cells;
+        }
+    }
 
     public enum CandidateSelection
     {
@@ -38,6 +61,32 @@ public class WFC : MonoBehaviour
         Random,
         Ordered,
         Weighted
+    }
+
+    public void SetCell(int x, int y, WFCTile tile)
+    {
+        NullCheck();
+
+        if (!OnCanvas(x, y))
+            Debug.LogError("(" + x + ", " + y + ") is not a valid cell. It's outside of the canvas.");
+
+        if (IsCollapsed(x, y))
+            UnCollapse(x, y);
+
+        cells[x, y].Clear();
+        cells[x, y].Add(tile);
+        Collapse(x, y);
+        pStack.Push(new Point(x, y));
+    }
+
+    public void ClearCell(int x, int y)
+    {
+        UnCollapse(x, y);
+    }
+
+    bool OnCanvas(int x, int y)
+    {
+        return x >= 0 && y >= 0 && x < width && y < height;
     }
 
     [MakeButton("Clear grid")]
@@ -225,10 +274,12 @@ public class WFC : MonoBehaviour
         return tiles[Random.Range(0, tiles.Length)];
     }
 
-    void Collapse(Point p)
+    void Collapse(Point p) => Collapse(p.x, p.y);
+
+    void Collapse(int x, int y)
     {
         //Debug.Log("Collapse(" + p.x + ", " + p.y + ")");
-        List<WFCTile> superPositions = cells[p.x, p.y];
+        List<WFCTile> superPositions = cells[x, y];
 
         if (superPositions.Count == 0)
         {
@@ -253,8 +304,22 @@ public class WFC : MonoBehaviour
 
         superPositions.Clear();
         superPositions.Add(tile);
-        collapsed[p.x, p.y] = true;
-        OnCellChanged?.Invoke(p.x, p.y, tile.id);
+        collapsed[x, y] = true;
+        OnCellChanged?.Invoke(x, y, tile.id);
+    }
+
+    void UnCollapse(int x, int y)
+    {
+        cells[x, y] = tiles.ToList();
+        collapsed[x, y] = false;
+
+        foreach (var dir in ValidDirs(x, y))
+        {
+            Point p = new Point(x, y) + dir;
+
+            if (collapsed[p.x, p.y])
+                pStack.Push(p);
+        }
     }
 
     Stack<Point> pStack;
@@ -288,17 +353,18 @@ public class WFC : MonoBehaviour
         }
     }
 
-    Point[] ValidDirs(Point p)
+    Point[] ValidDirs(Point p) => ValidDirs(p.x, p.y);
+    Point[] ValidDirs(int x, int y)
     {
         List<Point> list = new();
 
-        if (p.x > 0)
+        if (x > 0)
             list.Add(new Point(-1, 0));
-        if (p.y > 0)
+        if (y > 0)
             list.Add(new Point(0, -1));
-        if (p.x < width - 1)
+        if (x < width - 1)
             list.Add(new Point(1, 0));
-        if (p.y < height - 1)
+        if (y < height - 1)
             list.Add(new Point(0, 1));
 
         return list.ToArray();
@@ -364,5 +430,6 @@ public class WFC : MonoBehaviour
         return tileList.ToArray();
     }
 
-    bool IsCollapsed(Point p) => collapsed[p.x, p.y];
+    bool IsCollapsed(Point p) => IsCollapsed(p.x, p.y);
+    bool IsCollapsed(int x, int y) => collapsed[x, y];
 }
