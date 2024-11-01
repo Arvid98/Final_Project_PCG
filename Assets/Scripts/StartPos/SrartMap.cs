@@ -67,37 +67,37 @@ public class StartMap : MonoBehaviour
         SetExtraGoldTiles();
         SetForestTiles();
 
-       // wFC.CollapseRemainingWithBaseTile(GetTiles(), baseTile);
+        wFC.CollapseWithStartMapGrid(grid, GetTiles());
     }
     public void Clear()
     {
         usedPositions.Clear();
         grid = new int[gridWidth, gridHeight];
     }
-    public WFCTile[] GetTiles()
-    {
-        List<WFCTile> uniqueTiles = new List<WFCTile> { playerOneTile, playerTwoTile, baseTile, goldTile, stoneTile, forestTile };
-        return uniqueTiles.ToArray();
-    }
     //public WFCTile[] GetTiles()
     //{
-    //    List<WFCTile> uniqueTiles = new List<WFCTile>();
-
-    //    for (int x = 0; x < gridWidth; x++)
-    //    {
-    //        for (int y = 0; y < gridHeight; y++)
-    //        {
-    //            int tileId = grid[x, y];
-    //            WFCTile tile = GetTileById(tileId);
-    //            if (tile != null && !uniqueTiles.Contains(tile))
-    //            {
-    //                uniqueTiles.Add(tile);
-    //            }
-    //        }
-    //    }
-
+    //    List<WFCTile> uniqueTiles = new List<WFCTile> { playerOneTile, playerTwoTile, baseTile, goldTile, stoneTile, forestTile };
     //    return uniqueTiles.ToArray();
     //}
+    public WFCTile[] GetTiles()
+    {
+        List<WFCTile> uniqueTiles = new List<WFCTile>();
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                int tileId = grid[x, y];
+                WFCTile tile = GetTileById(tileId);
+                if (tile != null && !uniqueTiles.Contains(tile))
+                {
+                    uniqueTiles.Add(tile);
+                }
+            }
+        }
+
+        return uniqueTiles.ToArray();
+    }
 
     private WFCTile GetTileById(int id)
     {
