@@ -283,7 +283,7 @@ Transform:
   m_GameObject: {fileID: 619958087}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 32, y: 32, z: -64}
+  m_LocalPosition: {x: 60, y: 60, z: -120}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -533,18 +533,21 @@ MonoBehaviour:
   goldTilePrefab: {fileID: 8435150149764223072, guid: ea333d40d881af94a9b1ffba5a36807a, type: 3}
   stoneTilePrefab: {fileID: 8774507491889942717, guid: 3711e8cc6c6ce1f478aedc94b94d008e, type: 3}
   forestTilePrefab: {fileID: 9187866726600406942, guid: 343921246d797a745ae3644073fa8721, type: 3}
-  gridWidth: 64
-  gridHeight: 64
+  gridWidth: 120
+  gridHeight: 120
   tileSize: 1
-  minDistanceBetweenStarts: 25
-  minEdgeDistance: 8
-  maxEdgeDistance: 14
-  goldOffsetDistance: 3
-  extraGoldDistanceFromPlayer: 4
-  stoneDistanceFromPlayer: 4
-  forestDistanceFromPlayer: 7
-  numAdjacentForestTiles: 6
-  maxForestSpreadDistance: 1
+  minDistanceBetweenStarts: 50
+  minEdgeDistance: 20
+  maxEdgeDistance: 35
+  goldOffsetDistance: 5
+  extraGoldDistanceFromPlayer: 5
+  numAdjacentGoldTiles: 2
+  stoneDistanceFromPlayer: 6
+  numAdjacentStoneTiles: 2
+  forestDistanceFromPlayer: 15
+  numAdjacentForestTiles: 20
+  maxForestSpreadDistance: 2
+  numberOfForest: 4
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
