@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &144755298
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -152,34 +152,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 258e06c35795f1440a14ba02c5bc7321, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tiles:
-  - id: 0
-    left: 0
-    right: 1
-    top: 0
-    bottom: 1
-    weight: 0
-  - id: 1
-    left: 1
-    right: 2
-    top: 2
-    bottom: 2
-    weight: 0
-  - id: 2
-    left: 0
-    right: 1
-    top: 1
-    bottom: 0
-    weight: 0
-  - id: 3
-    left: 2
-    right: 0
-    top: 1
-    bottom: 1
-    weight: 0
-  width: 24
-  height: 24
-  candidateSelection: 2
+  tiles: []
+  width: 64
+  height: 64
+  candidateSelection: 0
   tileSelection: 0
   timePerStep: 0.005
 --- !u!4 &144755299
@@ -214,7 +190,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!81 &619958088
 AudioListener:
   m_ObjectHideFlags: 0
@@ -306,7 +282,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!81 &963194226
 AudioListener:
   m_ObjectHideFlags: 0
@@ -381,6 +357,106 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1244732545
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1244732547}
+  - component: {fileID: 1244732546}
+  m_Layer: 0
+  m_Name: StartMap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1244732546
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1244732545}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0f2d89d16967a94382420bf9d9c5412, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerOneTile:
+    id: 1
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
+  playerTwoTile:
+    id: 0
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
+  baseTile:
+    id: 2
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
+  goldTile:
+    id: 3
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
+  stoneTile:
+    id: 4
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
+  forestTile:
+    id: 5
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
+  gridWidth: 64
+  gridHeight: 64
+  minDistanceBetweenStarts: 20
+  minEdgeDistance: 10
+  maxEdgeDistance: 15
+  goldOffsetDistance: 6
+  extraGoldDistanceFromPlayer: 6
+  numAdjacentGoldTiles: 2
+  stoneDistanceFromPlayer: 6
+  numAdjacentStoneTiles: 2
+  forestDistanceFromPlayer: 12
+  numAdjacentForestTiles: 7
+  maxForestSpreadDistance: 2
+  numberOfForest: 3
+--- !u!4 &1244732547
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1244732545}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1741897325
 GameObject:
   m_ObjectHideFlags: 0
@@ -399,7 +475,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!23 &1741897327
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -479,9 +555,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   colors:
   - {r: 1, g: 0, b: 0, a: 1}
-  - {r: 0, g: 1, b: 0, a: 1}
-  - {r: 0, g: 0, b: 1, a: 1}
-  - {r: 1, g: 0, b: 1, a: 1}
+  - {r: 0, g: 0.20283675, b: 1, a: 1}
+  - {r: 0.8944019, g: 0.8944019, b: 0.9528302, a: 1}
+  - {r: 0.9245283, g: 0.89016616, b: 0.06541473, a: 1}
+  - {r: 0.6792453, g: 0.5927376, b: 0.6792453, a: 1}
+  - {r: 0.023050921, g: 0.6981132, b: 0.10158536, a: 1}
   defaultColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &2138725304
 GameObject:
@@ -499,7 +577,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2138725305
 Transform:
   m_ObjectHideFlags: 0
@@ -533,6 +611,34 @@ MonoBehaviour:
   goldTilePrefab: {fileID: 8435150149764223072, guid: ea333d40d881af94a9b1ffba5a36807a, type: 3}
   stoneTilePrefab: {fileID: 8774507491889942717, guid: 3711e8cc6c6ce1f478aedc94b94d008e, type: 3}
   forestTilePrefab: {fileID: 9187866726600406942, guid: 343921246d797a745ae3644073fa8721, type: 3}
+  baseTile:
+    id: 0
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
+  goldTile:
+    id: 0
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
+  stoneTile:
+    id: 0
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
+  forestTile:
+    id: 0
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
   gridWidth: 120
   gridHeight: 120
   tileSize: 1
@@ -557,3 +663,4 @@ SceneRoots:
   - {fileID: 1741897329}
   - {fileID: 619958090}
   - {fileID: 2138725305}
+  - {fileID: 1244732547}
