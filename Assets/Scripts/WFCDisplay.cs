@@ -1,15 +1,26 @@
-using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 [RequireComponent(typeof(Renderer))]
 public class WFCDisplay : MonoBehaviour
 {
+    [SerializeField]
+    TileBase[] tiles;
+
+    [SerializeField]
+    TileBase defaultTile;
+
     [SerializeField] Color[] colors;
     [SerializeField] Color defaultColor = Color.white;
 
     Renderer rend;
     Texture2D texture;
+
+    [SerializeField]
     WFC wfc;
+
+    [SerializeField]
+    Tilemap tilemap;
 
     bool textureHasChanged;
 
@@ -27,6 +38,9 @@ public class WFCDisplay : MonoBehaviour
     {
         if (wfc == null)
             wfc = FindObjectOfType<WFC>();
+
+        if (tilemap == null)
+            tilemap = FindObjectOfType<Tilemap>();
 
         if (rend == null)
             rend = GetComponent<Renderer>();
@@ -65,10 +79,17 @@ public class WFCDisplay : MonoBehaviour
         NullCheck();
 
         Color color = defaultColor;
-
-        if (id >= 0)
+        if ((uint)id < (uint)colors.Length) 
+        {
             color = colors[id];
-
+        }
         Set(x, y, color);
+
+        TileBase tile = defaultTile;
+        if ((uint)id < (uint)tiles.Length) 
+        {
+            tile = tiles[id];
+        }
+        tilemap.SetTile(new Vector3Int(x, y, 0), tile);
     }
 }

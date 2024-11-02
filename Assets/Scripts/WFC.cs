@@ -89,6 +89,14 @@ public class WFC : MonoBehaviour
         return x >= 0 && y >= 0 && x < width && y < height;
     }
 
+    [MakeButton("Align camera")]
+    void AlignCamera()
+    {
+        Camera camera = Camera.main;
+        camera.transform.position = new Vector3(width / 2, height / 2, -1);
+        camera.orthographicSize = Math.Max(width, height) / 2;
+    }
+
     [MakeButton("Clear grid")]
     void Clear()
     {
