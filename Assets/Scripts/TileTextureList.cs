@@ -37,7 +37,7 @@ public class TileTextureList : MonoBehaviour
         textureToRender.SetPixels32(textures[currentTexture].GetPixels32());
         textureToRender.Apply();
 
-        GetComponent<Renderer>().sharedMaterial.mainTexture = textureToRender;
+        GetComponent<Renderer>().material.mainTexture = textureToRender;
         currentTexture = (currentTexture + 1) % textures.Count;
     }
 

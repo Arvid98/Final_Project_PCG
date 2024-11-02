@@ -55,7 +55,7 @@ public class WFCDisplay : MonoBehaviour
                 for (int y = 0; y < texture.height; y++)
                     Set(x, y, defaultColor);
 
-            rend.sharedMaterial.mainTexture = texture;
+            rend.material.mainTexture = texture;
         }
     }
 

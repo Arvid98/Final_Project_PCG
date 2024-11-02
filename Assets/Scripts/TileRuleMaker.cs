@@ -4,22 +4,25 @@ using UnityEngine;
 
 public class TileRuleMaker : MonoBehaviour
 {
-    [SerializeField] private Renderer m_Renderer;
+    [SerializeField] 
+    private Renderer m_Renderer;
+
     public Renderer Renderer => m_Renderer ? m_Renderer : m_Renderer = GetComponent<Renderer>();
 
-
     HashSet<Color[]> colors;
+
     RuleList ruleList;
-    [SerializeField] List<WFCTile> tiles = new();
+
+    [SerializeField] 
+    List<WFCTile> tiles = new();
+
     void Start()
     {
-        
     }
 
     // Update is called once per frame
     void Update()
     {
-        
     }
 
     [MakeButton]
@@ -27,9 +30,7 @@ public class TileRuleMaker : MonoBehaviour
     {
         TextureArrayList list = GetComponent<TextureArrayList>();
 
-
-
-        Texture2D tex = CopyTexture(Renderer.sharedMaterial.mainTexture as Texture2D);
+        Texture2D tex = CopyTexture(Renderer.material.mainTexture as Texture2D);
 
         int n = list.Count;
 
@@ -42,14 +43,14 @@ public class TileRuleMaker : MonoBehaviour
         //currently tex is at 270 deg rot
 
         //flip horizontaly and try its rotations
-        tex = CopyTexture(Renderer.sharedMaterial.mainTexture as Texture2D); //reset
+        tex = CopyTexture(Renderer.material.mainTexture as Texture2D); //reset
         list.Add(ManipulateTexture(tex,FlipH));
         list.Add(ManipulateTexture(tex, Rotate90));
         list.Add(ManipulateTexture(tex, Rotate90));
         list.Add(ManipulateTexture(tex, Rotate90));
 
         //flip vertically and try its rotations
-        tex = CopyTexture(Renderer.sharedMaterial.mainTexture as Texture2D); //reset
+        tex = CopyTexture(Renderer.material.mainTexture as Texture2D); //reset
         list.Add(ManipulateTexture(tex, FlipV));
         list.Add(ManipulateTexture(tex, Rotate90));
         list.Add(ManipulateTexture(tex, Rotate90));
@@ -61,14 +62,9 @@ public class TileRuleMaker : MonoBehaviour
 
         //this finds all versions of a texture, and weight.. but do not bind it to anything
         //each successfull add should be recorded and edges(rules) added for that id..
-
-       
-
     }
 
-
     [MakeButton]
-
     public void AddRules()
     {
         TextureArrayList tlist = GetComponent<TextureArrayList>();
@@ -83,8 +79,6 @@ public class TileRuleMaker : MonoBehaviour
             tiles.Add(tile);
         }
     }
-
-
 
     public Texture2D CopyTexture(Texture2D toCopy)
     {
@@ -101,7 +95,7 @@ public class TileRuleMaker : MonoBehaviour
     [MakeButton]
     public void RotateTexture()
     {
-        Texture2D texture = Renderer.sharedMaterial.mainTexture as Texture2D;
+        Texture2D texture = Renderer.material.mainTexture as Texture2D;
 
         Debug.Assert(texture != null);
         Debug.Assert(texture.height == texture.width);
@@ -112,7 +106,7 @@ public class TileRuleMaker : MonoBehaviour
         //texture.filterMode = FilterMode.Point;
         //texture.wrapMode = TextureWrapMode.Clamp;
         texture.Apply();
-        Renderer.sharedMaterial.mainTexture = texture;
+        Renderer.material.mainTexture = texture;
     }
 
     [MakeButton]
@@ -129,7 +123,7 @@ public class TileRuleMaker : MonoBehaviour
 
     public void ManipulateTexture(Func<Color[],int, Color[]> action)
     {
-        Texture2D texture = Renderer.sharedMaterial.mainTexture as Texture2D;
+        Texture2D texture = Renderer.material.mainTexture as Texture2D;
 
         Debug.Assert(texture != null);
         Debug.Assert(texture.height == texture.width);
@@ -141,7 +135,7 @@ public class TileRuleMaker : MonoBehaviour
         //texture.filterMode = FilterMode.Point;
         //texture.wrapMode = TextureWrapMode.Clamp;
         texture.Apply();
-        Renderer.sharedMaterial.mainTexture = texture;
+        Renderer.material.mainTexture = texture;
     }
 
     public Texture2D ManipulateTexture(Texture2D texture, Func<Color[], int, Color[]> action)
@@ -181,9 +175,6 @@ public class TileRuleMaker : MonoBehaviour
         tile.left = ruleList.GetRuleId(left);
         tile.top = ruleList.GetRuleId(top);
         tile.bottom = ruleList.GetRuleId(bottom);
-
-
-
     }
 
     public Color[] Rotate90(Color[] pixels, int size)
@@ -206,7 +197,6 @@ public class TileRuleMaker : MonoBehaviour
             }
         }
     }
-
 
     public Color[] FlipH(Color[] pixels, int size)
     {
