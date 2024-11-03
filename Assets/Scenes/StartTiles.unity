@@ -152,12 +152,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 258e06c35795f1440a14ba02c5bc7321, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tiles: []
-  width: 128
-  height: 128
-  candidateSelection: 1
-  tileSelection: 1
-  timePerStep: 0.005
+  tiles:
+  - id: 6
+    left: 0
+    right: 0
+    top: 0
+    bottom: 0
+    weight: 0
+  width: 120
+  height: 120
+  candidateSelection: 2
+  tileSelection: 2
+  timePerStep: 0.002
 --- !u!4 &144755299
 Transform:
   m_ObjectHideFlags: 0
@@ -392,21 +398,21 @@ MonoBehaviour:
     right: 0
     top: 0
     bottom: 0
-    weight: 1
+    weight: 0
   playerTwoTile:
     id: 1
     left: 0
     right: 0
     top: 0
     bottom: 0
-    weight: 1
+    weight: 0
   baseTile:
     id: 0
     left: 0
     right: 0
     top: 0
     bottom: 0
-    weight: 1
+    weight: 1000
   goldTile:
     id: 3
     left: 0
@@ -427,9 +433,9 @@ MonoBehaviour:
     right: 0
     top: 0
     bottom: 0
-    weight: 1
-  gridWidth: 128
-  gridHeight: 129
+    weight: 120
+  gridWidth: 120
+  gridHeight: 120
   minDistanceBetweenStarts: 50
   minEdgeDistance: 20
   maxEdgeDistance: 35
@@ -560,6 +566,7 @@ MonoBehaviour:
   - {r: 0.9245283, g: 0.89016616, b: 0.06541473, a: 1}
   - {r: 0.6792453, g: 0.5927376, b: 0.6792453, a: 1}
   - {r: 0.023050921, g: 0.6981132, b: 0.10158536, a: 1}
+  - {r: 0.8757565, g: 0.9056604, b: 0.8792746, a: 1}
   defaultColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!1 &2138725304
 GameObject:

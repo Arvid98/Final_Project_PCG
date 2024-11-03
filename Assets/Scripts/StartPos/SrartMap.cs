@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class StartMap : MonoBehaviour
@@ -67,18 +68,62 @@ public class StartMap : MonoBehaviour
         SetExtraGoldTiles();
         SetForestTiles();
 
-        wFC.CollapseWithStartMapGrid(grid, GetTiles());
+        //wFC.CollapseWithStartMapGrid(grid, GetTiles());
+        //wFC.Tiles = GetTileTyp();
+        AddTilesToWFCTiles();
+        UpdateGridWithTiles();
+
+
+    }
+    void AddTilesToWFCTiles()
+    {
+        List<WFCTile> currentTiles = new List<WFCTile>(wFC.Tiles);
+        List<WFCTile> tilesToAdd = GetTileTyp().ToList(); 
+
+        foreach (var tile in tilesToAdd)
+        {
+            if (!currentTiles.Contains(tile))
+            {
+                currentTiles.Add(tile);
+            }
+        }
+
+        wFC.Tiles = currentTiles.ToArray();
+    }
+    void UpdateGridWithTiles()
+    {
+        if (wFC == null)
+            return;
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                int tileId = grid[x, y];
+                WFCTile tile = GetTileById(tileId);
+
+
+                if (tile != null && tile != baseTile)
+                {
+                    wFC.SetCell(x, y, tile);
+                }
+            }
+        }
     }
     public void Clear()
     {
         usedPositions.Clear();
         grid = new int[gridWidth, gridHeight];
     }
-    //public WFCTile[] GetTiles()
-    //{
-    //    List<WFCTile> uniqueTiles = new List<WFCTile> { playerOneTile, playerTwoTile, baseTile, goldTile, stoneTile, forestTile };
-    //    return uniqueTiles.ToArray();
-    //}
+    public WFCTile[] GetTileTyp()
+    {
+        List<WFCTile> uniqueTiles = new List<WFCTile> { playerOneTile, playerTwoTile, baseTile, goldTile, stoneTile, forestTile };
+
+
+        return uniqueTiles.ToArray();
+
+       
+    }
     public WFCTile[] GetTiles()
     {
         List<WFCTile> uniqueTiles = new List<WFCTile>();
@@ -89,7 +134,7 @@ public class StartMap : MonoBehaviour
             {
                 int tileId = grid[x, y];
                 WFCTile tile = GetTileById(tileId);
-                if (tile != null && !uniqueTiles.Contains(tile))
+                if (tile != null && !uniqueTiles.Contains(tile) )
                 {
                     uniqueTiles.Add(tile);
                 }
@@ -116,9 +161,13 @@ public class StartMap : MonoBehaviour
         usedPositions.Add(playerOnePosition);
         grid[(int)playerOnePosition.x, (int)playerOnePosition.y] = playerOneTile.id;
 
+        //wFC.SetCell((int)playerOnePosition.x, (int)playerOnePosition.y, playerOneTile);
+
         playerTwoPosition = GetValidRandomPosition();
         usedPositions.Add(playerTwoPosition);
         grid[(int)playerTwoPosition.x, (int)playerTwoPosition.y] = playerTwoTile.id;
+
+        //wFC.SetCell((int)playerTwoPosition.x, (int)playerTwoPosition.y, playerTwoTile);
     }
 
     void SetGoldTiles()

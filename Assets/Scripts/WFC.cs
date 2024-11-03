@@ -48,26 +48,26 @@ public class WFC : MonoBehaviour
             return cells;
         }
     }
-    public void CollapseWithStartMapGrid(int[,] startMapGrid, WFCTile[] startMapTiles)
-    {
-        NullCheck();
-        Tiles = startMapTiles;
+    //public void CollapseWithStartMapGrid(int[,] startMapGrid, WFCTile[] startMapTiles)
+    //{
+    //    //NullCheck();
+    //    Tiles = startMapTiles;
 
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                int tileId = startMapGrid[x, y];
+    //    for (int x = 0; x < width; x++)
+    //    {
+    //        for (int y = 0; y < height; y++)
+    //        {
+    //            int tileId = startMapGrid[x, y];
 
-                WFCTile tile = GetTileById(tileId);
+    //            WFCTile tile = GetTileById(tileId);
 
-                if (tile != null && !IsCollapsed(x, y))
-                {
-                    SetCell(x, y, tile);
-                }
-            }
-        }
-    }
+    //            //if (tile != null && !IsCollapsed(x, y))
+    //            {
+    //                SetCell(x, y, tile);
+    //            }
+    //        }
+    //    }
+    //}
 
    
     private WFCTile GetTileById(int id)
@@ -313,7 +313,7 @@ public class WFC : MonoBehaviour
 
         if (superPositions.Count == 0)
         {
-            Debug.Log("WFC - Tried to collapse but had no solutions.");
+            Debug.Log($"WFC - Tried to collapse but had no solutions. {x} {y}" );
             play = false;
             return;
         }
