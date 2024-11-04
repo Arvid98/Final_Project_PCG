@@ -199,11 +199,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   width: 120
   height: 120
-  candidateSelection: 2
+  candidateSelection: 0
   tileSelection: 2
-  timePerStep: 0.002
-  buttons:
-    wtf: 0
+  timePerStep: 0.0005
   tiles:
   - id: 6
     left: []
@@ -489,6 +487,7 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
+  - component: {fileID: 963194229}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -570,6 +569,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &963194229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963194225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_Version: 2
+  m_TaaSettings:
+    quality: 3
+    frameInfluence: 0.1
+    jitterScale: 1
+    mipBias: 0
+    varianceClampScale: 0.9
+    contrastAdaptiveSharpening: 0
 --- !u!1 &1244732545
 GameObject:
   m_ObjectHideFlags: 0
@@ -601,49 +644,113 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerOneTile:
     id: 2
-    left: []
-    right: []
-    top: []
-    bottom: []
+    left:
+    - TileId: 0
+      Weight: 0
+    right:
+    - TileId: 0
+      Weight: 0
+    top:
+    - TileId: 0
+      Weight: 0
+    bottom:
+    - TileId: 0
+      Weight: 0
     weight: 0
   playerTwoTile:
     id: 1
-    left: []
-    right: []
-    top: []
-    bottom: []
+    left:
+    - TileId: 0
+      Weight: 0
+    right:
+    - TileId: 0
+      Weight: 0
+    top:
+    - TileId: 0
+      Weight: 0
+    bottom:
+    - TileId: 0
+      Weight: 0
     weight: 0
   baseTile:
     id: 0
-    left: []
-    right: []
-    top: []
-    bottom: []
+    left:
+    - TileId: 0
+      Weight: 1
+    - TileId: 5
+      Weight: 0
+    right:
+    - TileId: 0
+      Weight: 1
+    - TileId: 5
+      Weight: 0
+    top:
+    - TileId: 0
+      Weight: 1
+    - TileId: 5
+      Weight: 0
+    bottom:
+    - TileId: 0
+      Weight: 1
+    - TileId: 5
+      Weight: 0
     weight: 1000
   goldTile:
     id: 3
-    left: []
-    right: []
-    top: []
-    bottom: []
+    left:
+    - TileId: 0
+      Weight: 0
+    right:
+    - TileId: 0
+      Weight: 0
+    top:
+    - TileId: 0
+      Weight: 0
+    bottom:
+    - TileId: 0
+      Weight: 0
     weight: 1
   stoneTile:
     id: 4
-    left: []
-    right: []
-    top: []
-    bottom: []
+    left:
+    - TileId: 0
+      Weight: 0
+    right:
+    - TileId: 0
+      Weight: 0
+    top:
+    - TileId: 0
+      Weight: 0
+    bottom:
+    - TileId: 0
+      Weight: 0
     weight: 1
   forestTile:
     id: 5
-    left: []
-    right: []
-    top: []
-    bottom: []
-    weight: 120
+    left:
+    - TileId: 0
+      Weight: 0
+    - TileId: 5
+      Weight: 1000
+    right:
+    - TileId: 0
+      Weight: 0
+    - TileId: 5
+      Weight: 1000
+    top:
+    - TileId: 0
+      Weight: 0
+    - TileId: 5
+      Weight: 1000
+    bottom:
+    - TileId: 0
+      Weight: 0
+    - TileId: 5
+      Weight: 1000
+    weight: 50
   gridWidth: 120
   gridHeight: 120
-  minDistanceBetweenStarts: 50
+  minDistanceBetweenStarts: 55
   minEdgeDistance: 20
   maxEdgeDistance: 35
   goldOffsetDistance: 6
@@ -766,8 +873,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be874953aca3cd9439b4ab119dd46db5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tiles: []
-  defaultTile: {fileID: 0}
+  tiles:
+  - {fileID: 11400000, guid: c57890ef93fcac5418c851f4ff8b5dc5, type: 2}
+  - {fileID: 11400000, guid: 784e4439d352c3d4d92a02efd6c4e61b, type: 2}
+  - {fileID: 11400000, guid: a344b105c2a3cc140911bce33c814b00, type: 2}
+  - {fileID: 4127714395150103086, guid: 9863fd0ec3a12e6438421dcb10a92e73, type: 2}
+  - {fileID: 11400000, guid: c8f392d7e42146b4fae4123647bdeefa, type: 2}
+  - {fileID: 11400000, guid: 5209543961e1f50468f023531dcc97c9, type: 2}
+  defaultTile: {fileID: 11400000, guid: 8d9d81e6c4765534c9c8afb9d428f47e, type: 2}
   colors:
   - {r: 0.9433962, g: 0.9433962, b: 0.9433962, a: 1}
   - {r: 0, g: 0.20283675, b: 1, a: 1}
@@ -775,7 +888,6 @@ MonoBehaviour:
   - {r: 0.9245283, g: 0.89016616, b: 0.06541473, a: 1}
   - {r: 0.6792453, g: 0.5927376, b: 0.6792453, a: 1}
   - {r: 0.023050921, g: 0.6981132, b: 0.10158536, a: 1}
-  - {r: 0.8757565, g: 0.9056604, b: 0.8792746, a: 1}
   defaultColor: {r: 1, g: 1, b: 1, a: 1}
   wfc: {fileID: 0}
   tilemap: {fileID: 0}
