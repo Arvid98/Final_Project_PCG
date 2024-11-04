@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using Random = UnityEngine.Random;
 using Unity.Collections;
+using System.Threading;
 
 public class WFC : MonoBehaviour
 {
@@ -16,12 +17,15 @@ public class WFC : MonoBehaviour
 
     [SerializeField] WFCTile[] tiles;
 
-    HashSet<WFCTile>[,] cells;
-    bool[,] collapsed;
+    HashSet<WFCTile>[][] cells;
+    BitArray[] collapsed;
 
     float timer;
     bool play;
 
+    List<Point> candidateList = new();
+    List<Point> furthestList = new();
+    
     /// <summary>
     /// Parameters: x, y, id
     /// </summary>
@@ -39,18 +43,20 @@ public class WFC : MonoBehaviour
         {
             WFCTile[,] cells = new WFCTile[width, height];
 
-            for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
             {
-                for (int y = 0; y < height; y++)
+                var row = this.cells[y];
+                for (int x = 0; x < width; x++)
                 {
                     if (IsCollapsed(x, y))
-                        cells[x, y] = this.cells[x, y].First();
+                        cells[x, y] = row[x].First();
                 }
             }
 
             return cells;
         }
     }
+
     //public void CollapseWithStartMapGrid(int[,] startMapGrid, WFCTile[] startMapTiles)
     //{
     //    //NullCheck();
@@ -71,7 +77,6 @@ public class WFC : MonoBehaviour
     //        }
     //    }
     //}
-
 
     private WFCTile GetTileById(int id)
     {
@@ -106,8 +111,8 @@ public class WFC : MonoBehaviour
         if (IsCollapsed(x, y))
             UnCollapse(x, y);
 
-        cells[x, y].Clear();
-        cells[x, y].Add(tile);
+        cells[y][x].Clear();
+        cells[y][x].Add(tile);
         Collapse(x, y);
         pStack.Push(new Point(x, y));
     }
@@ -133,18 +138,22 @@ public class WFC : MonoBehaviour
     [MakeButton]
     void ClearGrid()
     {
-        cells = new HashSet<WFCTile>[width, height];
-        collapsed = new bool[width, height];
+        cells = new HashSet<WFCTile>[height][];
+        collapsed = new BitArray[height];
 
         pStack.Clear();
 
         HashSet<WFCTile> seed = tiles.ToHashSet();
 
-        for (int x = 0; x < width; x++)
+        for (int y = 0; y < height; y++)
         {
-            for (int y = 0; y < height; y++)
+            collapsed[y] = new BitArray(width);
+
+            var cellRow = new HashSet<WFCTile>[width];
+            cells[y] = cellRow;
+            for (int x = 0; x < width; x++)
             {
-                cells[x, y] = new HashSet<WFCTile>(seed);
+                cellRow[x] = new HashSet<WFCTile>(seed);
                 OnCellChanged?.Invoke(x, y, -1);
             }
         }
@@ -226,71 +235,68 @@ public class WFC : MonoBehaviour
 
     Point GetLowestEntropy()
     {
-        List<Point> candidates = new();
+        candidateList.Clear();
         int lowestEntropy = int.MaxValue;
 
-        for (int x = 0; x < width; x++)
+        for (int y = 0; y < height; y++)
         {
-            for (int y = 0; y < height; y++)
+            var cellRow = cells[y];
+            var collapsedRow = collapsed[y];
+
+            for (int x = 0; x < collapsedRow.Length; x++)
             {
-                Point p = new Point(x, y);
-                if (IsCollapsed(p))
+                if (collapsedRow.Get(x))
                     continue;
 
-                if (cells[x, y].Count < lowestEntropy)
+                int count = cellRow[x].Count;
+                if (count < lowestEntropy)
                 {
-                    candidates.Clear();
-                    lowestEntropy = cells[x, y].Count;
+                    candidateList.Clear();
+                    lowestEntropy = count;
                 }
 
-                if (cells[x, y].Count == lowestEntropy)
-                    candidates.Add(p);
+                if (count == lowestEntropy)
+                    candidateList.Add(new Point(x, y));
             }
         }
 
-        if (candidates.Count == 0)
+        if (candidateList.Count == 0)
             return new Point(-1, -1);
 
-        Point candidate = new();
+        if (candidateList.Count == 1)
+            return candidateList[0];
 
-        switch (candidateSelection)
+        return candidateSelection switch
         {
-            case CandidateSelection.Random:
-                candidate = candidates[Random.Range(0, candidates.Count)];
-                break;
-
-            case CandidateSelection.Ordered:
-                candidate = candidates[0];
-                break;
-
-            case CandidateSelection.FurthestFromCenter:
-                candidate = FurthestFromCenter(candidates);
-                break;
-
-        }
-
-        return candidate;
+            CandidateSelection.Random => candidateList[Random.Range(0, candidateList.Count)],
+            CandidateSelection.Ordered => candidateList[0],
+            CandidateSelection.FurthestFromCenter => FurthestFromCenter(candidateList),
+            _ => new Point(-1, -1),
+        };
     }
 
     Point FurthestFromCenter(List<Point> points)
     {
-        List<Point> furthest = new();
+        furthestList.Clear();
         int furthestDist = 0;
 
+        Point center = new(width / 2, height / 2);
         foreach (Point p in points)
         {
-            Point diff = p - new Point(width / 2, height / 2);
+            Point diff = p - center;
             int sm = diff.x * diff.x + diff.y * diff.y;
+
             if (sm > furthestDist)
             {
-                furthest.Clear();
+                furthestList.Clear();
                 furthestDist = sm;
             }
+
             if (furthestDist == sm)
-                furthest.Add(p);
+                furthestList.Add(p);
         }
 
-        return furthest[Random.Range(0, furthest.Count)];
+        return furthestList[Random.Range(0, furthestList.Count)];
     }
 
     WFCTile Weighted(HashSet<WFCTile> tiles)
@@ -330,7 +336,7 @@ public class WFC : MonoBehaviour
     void Collapse(int x, int y)
     {
         //Debug.Log("Collapse(" + p.x + ", " + p.y + ")");
-        HashSet<WFCTile> superPositions = cells[x, y];
+        HashSet<WFCTile> superPositions = cells[y][x];
 
         if (superPositions.Count == 0)
         {
@@ -349,20 +355,20 @@ public class WFC : MonoBehaviour
 
         superPositions.Clear();
         superPositions.Add(tile);
-        collapsed[x, y] = true;
+        collapsed[y][x] = true;
         OnCellChanged?.Invoke(x, y, tile.id);
     }
 
     void UnCollapse(int x, int y)
     {
-        cells[x, y] = tiles.ToHashSet();
-        collapsed[x, y] = false;
+        cells[y][x] = tiles.ToHashSet();
+        collapsed[y][x] = false;
 
         foreach (Point dir in ValidDirs(x, y))
         {
             Point p = new Point(x, y) + dir;
 
-            if (collapsed[p.x, p.y])
+            if (collapsed[p.y][p.x])
                 pStack.Push(p);
         }
     }
@@ -466,7 +472,7 @@ public class WFC : MonoBehaviour
     /// </summary>
     HashSet<WFCTile> GetCell(Point p)
     {
-        return cells[p.x, p.y];
+        return cells[p.y][p.x];
     }
 
     /// <summary>
@@ -527,5 +533,5 @@ public class WFC : MonoBehaviour
 
     bool IsCollapsed(Point p) => IsCollapsed(p.x, p.y);
 
-    bool IsCollapsed(int x, int y) => collapsed[x, y];
+    bool IsCollapsed(int x, int y) => collapsed[y].Get(x);
 }

@@ -21,13 +21,11 @@ public struct GuidReference
 
 
 #if UNITY_EDITOR
-#pragma warning disable 0414
     // decorate with some extra info in Editor so we can inform a user of what that GUID means
     [SerializeField]
     private string cachedName;
     [SerializeField]
     private SceneAsset cachedScene;
-#pragma warning restore 0414
 #endif
 
     public GameObject GameObject
@@ -51,8 +49,10 @@ public struct GuidReference
         OnGuidAdded = delegate (GameObject go) { };
         OnGuidRemoved = delegate () { };
 
+#if UNITY_EDITOR
         cachedName = string.Empty;
         cachedScene = null;
+#endif
 
         //structs are stupid?
         addDelegate = null;
