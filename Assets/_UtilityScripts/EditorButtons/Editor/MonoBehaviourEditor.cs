@@ -5,7 +5,6 @@ using UnityEngine;
 [CustomEditor(typeof(MonoBehaviour), true), CanEditMultipleObjects]
 public class MonoBehaviourEditor : Editor
 {
-
     private MakeButtonManager buttonManager;
 
     void OnEnable()
@@ -15,9 +14,7 @@ public class MonoBehaviourEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        base.OnInspectorGUI();
         buttonManager.Draw(targets);
+        base.OnInspectorGUI();
     }
 }
-
-

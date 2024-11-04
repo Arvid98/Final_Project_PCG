@@ -14,7 +14,7 @@ public class ScriptableObjectEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        base.OnInspectorGUI();
         buttonManager.Draw(targets);
+        base.OnInspectorGUI();
     }
 }
