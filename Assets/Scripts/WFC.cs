@@ -121,7 +121,7 @@ public class WFC : MonoBehaviour
     {
         return x >= 0 && y >= 0 && x < width && y < height;
     }
-    
+
     [MakeButton]
     void AlignCamera()
     {
@@ -135,7 +135,9 @@ public class WFC : MonoBehaviour
     {
         cells = new HashSet<WFCTile>[width, height];
         collapsed = new bool[width, height];
-        pStack = new();
+
+        pStack.Clear();
+        possibleNeighbours.Clear();
 
         HashSet<WFCTile> seed = tiles.ToHashSet();
 
@@ -151,7 +153,7 @@ public class WFC : MonoBehaviour
 
     void NullCheck()
     {
-        if (cells == null || collapsed == null || pStack == null)
+        if (cells == null || collapsed == null)
             ClearGrid();
     }
 
@@ -167,7 +169,7 @@ public class WFC : MonoBehaviour
 
         play = true;
     }
-    
+
     [MakeButton]
     private void Pause()
     {
@@ -197,7 +199,7 @@ public class WFC : MonoBehaviour
 
         TryPlay();
     }
-    
+
     [MakeButton]
     void Step()
     {
@@ -366,12 +368,11 @@ public class WFC : MonoBehaviour
         }
     }
 
-    Stack<Point> pStack;
+    Stack<Point> pStack = new();
+    HashSet<WFCTile> possibleNeighbours = new();
 
     void Propagate(Point p)
     {
-        HashSet<WFCTile> possibleNeighbours = new();
-
         pStack.Push(p);
 
         while (pStack.TryPop(out p))
@@ -389,8 +390,7 @@ public class WFC : MonoBehaviour
 
                 if (nPossibilities.Count != previousCount)
                 {
-                    if (!pStack.Contains(pNeighbor))
-                        pStack.Push(pNeighbor);
+                    pStack.Push(pNeighbor);
                 }
             }
         }
