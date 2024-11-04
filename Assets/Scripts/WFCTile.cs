@@ -21,5 +21,4 @@ public class WFCTile
 public struct ConnectorDef
 {
     public int TileId;
-    public float Weight;
 }

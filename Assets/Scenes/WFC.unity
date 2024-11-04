@@ -160,58 +160,42 @@ MonoBehaviour:
   - id: 0
     left:
     - TileId: 0
-      Weight: 0
     right:
     - TileId: 1
-      Weight: 0
     top:
     - TileId: 0
-      Weight: 0
     bottom:
     - TileId: 1
-      Weight: 0
     weight: 0
   - id: 1
     left:
     - TileId: 1
-      Weight: 0
     right:
     - TileId: 2
-      Weight: 0
     top:
     - TileId: 2
-      Weight: 0
     bottom:
     - TileId: 2
-      Weight: 0
     weight: 0
   - id: 2
     left:
     - TileId: 0
-      Weight: 0
     right:
     - TileId: 1
-      Weight: 0
     top:
     - TileId: 1
-      Weight: 0
     bottom:
     - TileId: 0
-      Weight: 0
     weight: 0
   - id: 3
     left:
     - TileId: 2
-      Weight: 0
     right:
     - TileId: 0
-      Weight: 0
     top:
     - TileId: 1
-      Weight: 0
     bottom:
     - TileId: 1
-      Weight: 0
     weight: 0
 --- !u!4 &144755299
 Transform:

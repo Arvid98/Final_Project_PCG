@@ -72,7 +72,7 @@ public class WFC : MonoBehaviour
     //    }
     //}
 
-   
+
     private WFCTile GetTileById(int id)
     {
         foreach (WFCTile tile in Tiles)
@@ -137,7 +137,6 @@ public class WFC : MonoBehaviour
         collapsed = new bool[width, height];
 
         pStack.Clear();
-        possibleNeighbours.Clear();
 
         HashSet<WFCTile> seed = tiles.ToHashSet();
 
@@ -335,7 +334,7 @@ public class WFC : MonoBehaviour
 
         if (superPositions.Count == 0)
         {
-            Debug.Log($"WFC - Tried to collapse but had no solutions. {x} {y}" );
+            Debug.Log($"WFC - Tried to collapse but had no solutions. {x} {y}");
             play = false;
             return;
         }
@@ -369,7 +368,8 @@ public class WFC : MonoBehaviour
     }
 
     Stack<Point> pStack = new();
-    HashSet<WFCTile> possibleNeighbours = new();
+    HashSet<int> neighborConnectors = new();
+    HashSet<int> foundConnectors = new();
 
     void Propagate(Point p)
     {
@@ -384,9 +384,7 @@ public class WFC : MonoBehaviour
                 var nPossibilities = GetCell(pNeighbor);
                 int previousCount = nPossibilities.Count;
 
-                PossibleNeighbors(p, dir, possibleNeighbours);
-                nPossibilities.IntersectWith(possibleNeighbours);
-                possibleNeighbours.Clear();
+                IntersectNeighbors(p, dir, nPossibilities);
 
                 if (nPossibilities.Count != previousCount)
                 {
@@ -474,40 +472,60 @@ public class WFC : MonoBehaviour
     /// <summary>
     /// List of valid neighbors in <paramref name="dir"/> for cell at point <paramref name="p"/>
     /// </summary>
-    void PossibleNeighbors(Point p, Point dir, HashSet<WFCTile> foundTiles)
+    void IntersectNeighbors(Point p, Point dir, HashSet<WFCTile> neighborPossibilities)
     {
-        HashSet<int> connectors = new();
+        neighborConnectors.Clear();
+        foundConnectors.Clear();
 
         foreach (WFCTile possibility in GetCell(p))
         {
-            int connector = (dir.x, dir.y) switch
+            List<ConnectorDef> connectors = (dir.x, dir.y) switch
             {
-                (1, 0) => possibility.right.FirstOrDefault().TileId,
-                (-1, 0) => possibility.left.FirstOrDefault().TileId,
-                (0, 1) => possibility.top.FirstOrDefault().TileId,
-                (0, -1) => possibility.bottom.FirstOrDefault().TileId,
-                _ => -1,
+                (1, 0) => possibility.right,
+                (-1, 0) => possibility.left,
+                (0, 1) => possibility.top,
+                (0, -1) => possibility.bottom,
+                _ => null,
             };
-            connectors.Add(connector);
-        }
+            if (connectors == null)
+            {
+                continue;
+            }
 
-        foreach (WFCTile tile in tiles)
-        {
-            int connector = (dir.x, dir.y) switch
+            foreach (ConnectorDef connector in connectors)
             {
-                (1, 0) => tile.left.FirstOrDefault().TileId,
-                (-1, 0) => tile.right.FirstOrDefault().TileId,
-                (0, 1) => tile.bottom.FirstOrDefault().TileId,
-                (0, -1) => tile.top.FirstOrDefault().TileId,
-                _ => -1
-            };
-            if (connectors.Contains(connector))
-            {
-                foundTiles.Add(tile);
+                neighborConnectors.Add(connector.TileId);
             }
         }
+
+        foreach (WFCTile tile in neighborPossibilities)
+        {
+            List<ConnectorDef> connectors = (dir.x, dir.y) switch
+            {
+                (1, 0) => tile.left,
+                (-1, 0) => tile.right,
+                (0, 1) => tile.bottom,
+                (0, -1) => tile.top,
+                _ => null
+            };
+            if (connectors == null)
+            {
+                continue;
+            }
+
+            foreach (ConnectorDef connector in connectors)
+            {
+                if (neighborConnectors.Contains(connector.TileId))
+                {
+                    foundConnectors.Add(tile.id);
+                }
+            }
+        }
+
+        neighborPossibilities.IntersectWith(foundConnectors.Select(id => tiles[id]));
     }
 
     bool IsCollapsed(Point p) => IsCollapsed(p.x, p.y);
+
     bool IsCollapsed(int x, int y) => collapsed[x, y];
 }
