@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using System;
+using System.Collections;
 using Random = UnityEngine.Random;
+using Unity.Collections;
 
 public class WFC : MonoBehaviour
 {
@@ -13,7 +15,7 @@ public class WFC : MonoBehaviour
     [SerializeField] TileSelection tileSelection;
     [SerializeField] float timePerStep = 0.01f;
 
-    List<WFCTile>[,] cells;
+    HashSet<WFCTile>[,] cells;
     bool[,] collapsed;
 
     float timer;
@@ -25,7 +27,7 @@ public class WFC : MonoBehaviour
     public Action<int, int, int> OnCellChanged;
     public int Width => width;
     public int Height => height;
-    public WFCTile[] Tiles { get { return tiles; } set { tiles = value; } }
+    public WFCTile[]? Tiles { get { return tiles; } set { tiles = value; } }
 
     /// <summary>
     /// Null means it's not collapsed yet and doesn't have a tile.
@@ -41,7 +43,7 @@ public class WFC : MonoBehaviour
                 for (int y = 0; y < height; y++)
                 {
                     if (IsCollapsed(x, y))
-                        cells[x, y] = this.cells[x, y][0];
+                        cells[x, y] = this.cells[x, y].First();
                 }
             }
 
@@ -100,15 +102,17 @@ public class WFC : MonoBehaviour
     [MakeButton("Clear grid")]
     void Clear()
     {
-        cells = new List<WFCTile>[width, height];
+        cells = new HashSet<WFCTile>[width, height];
         collapsed = new bool[width, height];
         pStack = new();
+
+        HashSet<WFCTile> seed = tiles.ToHashSet();
 
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                cells[x, y] = tiles.ToList();
+                cells[x, y] = new HashSet<WFCTile>(seed);
                 OnCellChanged?.Invoke(x, y, -1);
             }
         }
@@ -116,7 +120,7 @@ public class WFC : MonoBehaviour
 
     void NullCheck()
     {
-        if (cells == null || collapsed == null)
+        if (cells == null || collapsed == null || pStack == null)
             Clear();
     }
 
@@ -190,7 +194,7 @@ public class WFC : MonoBehaviour
 
     Point GetLowestEntropy()
     {
-        List<Point> candidates = new List<Point>();
+        List<Point> candidates = new();
         int lowestEntropy = int.MaxValue;
 
         for (int x = 0; x < width; x++)
@@ -228,7 +232,7 @@ public class WFC : MonoBehaviour
                 break;
 
             case CandidateSelection.FurthestFromCenter:
-                candidate = FurthestFromCenter(candidates.ToArray());
+                candidate = FurthestFromCenter(candidates);
                 break;
 
         }
@@ -236,14 +240,15 @@ public class WFC : MonoBehaviour
         return candidate;
     }
 
-    Point FurthestFromCenter(Point[] points)
+    Point FurthestFromCenter(List<Point> points)
     {
         List<Point> furthest = new();
-        float furthestDist = 0;
+        int furthestDist = 0;
 
-        foreach (var p in points)
+        foreach (Point p in points)
         {
-            float sm = (p - new Point((int)(width / 2f), (int)(height / 2f))).SquareMagnitude;
+            Point diff = p - new Point(width / 2, height / 2);
+            int sm = diff.x * diff.x + diff.y * diff.y;
             if (sm > furthestDist)
             {
                 furthest.Clear();
@@ -256,30 +261,36 @@ public class WFC : MonoBehaviour
         return furthest[Random.Range(0, furthest.Count)];
     }
 
-    WFCTile Weighted(WFCTile[] tiles)
+    WFCTile Weighted(HashSet<WFCTile> tiles)
     {
-        float[] min = new float[tiles.Length];
-        float[] max = new float[tiles.Length];
+        float[] min = new float[tiles.Count];
+        float[] max = new float[tiles.Count];
 
         float sum = 0;
-        for (int i = 0; i < tiles.Length; i++)
+        int i = 0;
+        foreach (WFCTile tile in tiles)
         {
             min[i] = sum;
-            sum += tiles[i].weight;
+            sum += tile.weight;
             max[i] = sum;
+            i++;
         }
 
         float randomNum = Random.Range(0, sum);
 
-        for (int i = 0; i < tiles.Length; i++)
+        i = 0;
+        foreach (WFCTile tile in tiles)
         {
             if (min[i] <= randomNum && max[i] >= randomNum)
-                return tiles[i];
+            {
+                return tile;
+            }
+            i++;
         }
 
         // returns normal random if weights didn't work
         Debug.Log("WFC - Weighted random didn't work. Returning normal random.");
-        return tiles[Random.Range(0, tiles.Length)];
+        return tiles.ElementAt(Random.Range(0, tiles.Count));
     }
 
     void Collapse(Point p) => Collapse(p.x, p.y);
@@ -287,7 +298,7 @@ public class WFC : MonoBehaviour
     void Collapse(int x, int y)
     {
         //Debug.Log("Collapse(" + p.x + ", " + p.y + ")");
-        List<WFCTile> superPositions = cells[x, y];
+        HashSet<WFCTile> superPositions = cells[x, y];
 
         if (superPositions.Count == 0)
         {
@@ -296,19 +307,13 @@ public class WFC : MonoBehaviour
             return;
         }
 
-        WFCTile tile = new();
-        switch (tileSelection)
+        WFCTile tile = tileSelection switch
         {
-            case TileSelection.Random:
-                tile = superPositions[Random.Range(0, superPositions.Count)];
-                break;
-            case TileSelection.Ordered:
-                tile = superPositions[0];
-                break;
-            case TileSelection.Weighted:
-                tile = Weighted(superPositions.ToArray());
-                break;
-        }
+            TileSelection.Random => superPositions.ElementAt(Random.Range(0, superPositions.Count)),
+            TileSelection.Ordered => superPositions.First(),
+            TileSelection.Weighted => Weighted(superPositions),
+            _ => throw new Exception("Invalid tile selection."),
+        };
 
         superPositions.Clear();
         superPositions.Add(tile);
@@ -318,10 +323,10 @@ public class WFC : MonoBehaviour
 
     void UnCollapse(int x, int y)
     {
-        cells[x, y] = tiles.ToList();
+        cells[x, y] = tiles.ToHashSet();
         collapsed[x, y] = false;
 
-        foreach (var dir in ValidDirs(x, y))
+        foreach (Point dir in ValidDirs(x, y))
         {
             Point p = new Point(x, y) + dir;
 
@@ -334,108 +339,142 @@ public class WFC : MonoBehaviour
 
     void Propagate(Point p)
     {
+        HashSet<WFCTile> possibleNeighbours = new();
+
         pStack.Push(p);
 
-        while (pStack.Count > 0)
+        while (pStack.TryPop(out p))
         {
-            p = pStack.Pop();
-
-            foreach (var dir in ValidDirs(p))
+            foreach (Point dir in ValidDirs(p))
             {
                 Point pNeighbor = p + dir;
-                WFCTile[] nPossibilities = Possibilities(pNeighbor);
 
-                WFCTile[] possibleNeighbours = PossibleNeighbors(p, dir);
+                var nPossibilities = GetCell(pNeighbor);
+                int previousCount = nPossibilities.Count;
 
-                foreach (var nPossibility in nPossibilities)
+                PossibleNeighbors(p, dir, possibleNeighbours);
+                nPossibilities.IntersectWith(possibleNeighbours);
+                possibleNeighbours.Clear();
+
+                if (nPossibilities.Count != previousCount)
                 {
-                    if (!possibleNeighbours.Contains(nPossibility))
-                    {
-                        cells[pNeighbor.x, pNeighbor.y].Remove(nPossibility);
-
-                        if (!pStack.Contains(pNeighbor))
-                            pStack.Push(pNeighbor);
-                    }
+                    if (!pStack.Contains(pNeighbor))
+                        pStack.Push(pNeighbor);
                 }
             }
         }
     }
 
-    Point[] ValidDirs(Point p) => ValidDirs(p.x, p.y);
-    Point[] ValidDirs(int x, int y)
+    ValidDirEnumerator ValidDirs(Point p) => ValidDirs(p.x, p.y);
+
+    ValidDirEnumerator ValidDirs(int x, int y)
     {
-        List<Point> list = new();
+        return new ValidDirEnumerator(x, y, width, height);
+    }
 
-        if (x > 0)
-            list.Add(new Point(-1, 0));
-        if (y > 0)
-            list.Add(new Point(0, -1));
-        if (x < width - 1)
-            list.Add(new Point(1, 0));
-        if (y < height - 1)
-            list.Add(new Point(0, 1));
+    struct ValidDirEnumerator : IEnumerable<Point>, IEnumerator<Point>
+    {
+        private int _state;
+        private readonly int _x;
+        private readonly int _y;
+        private readonly int _w;
+        private readonly int _h;
 
-        return list.ToArray();
+        public ValidDirEnumerator(int x, int y, int width, int height)
+        {
+            _x = x;
+            _y = y;
+            _w = width;
+            _h = height;
+            _state = 0;
+        }
+
+        public readonly Point Current => _state switch
+        {
+            1 => new Point(-1, 0),
+            2 => new Point(0, -1),
+            3 => new Point(1, 0),
+            4 => new Point(0, 1),
+            _ => new Point(),
+        };
+
+        readonly object IEnumerator.Current => Current;
+
+        public readonly void Dispose()
+        {
+        }
+
+        public readonly ValidDirEnumerator GetEnumerator() => this;
+
+        public bool MoveNext()
+        {
+            while (_state < 4)
+            {
+                _state++;
+                switch (_state)
+                {
+                    case 1 when _x > 0:
+                    case 2 when _y > 0:
+                    case 3 when _x < _w - 1:
+                    case 4 when _y < _h - 1:
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        public readonly void Reset()
+        {
+        }
+
+        readonly IEnumerator<Point> IEnumerable<Point>.GetEnumerator() => GetEnumerator();
+
+        readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
     /// <summary>
     /// List possible outcomes for cell at point <paramref name="p"/>
     /// </summary>
-    /// <param name="p"></param>
-    /// <param name="dir"></param>
-    /// <returns></returns>
-    WFCTile[] Possibilities(Point p)
+    HashSet<WFCTile> GetCell(Point p)
     {
-        return cells[p.x, p.y].ToArray();
+        return cells[p.x, p.y];
     }
 
     /// <summary>
     /// List of valid neighbors in <paramref name="dir"/> for cell at point <paramref name="p"/>
     /// </summary>
-    /// <param name="p"></param>
-    /// <param name="dir"></param>
-    /// <returns></returns>
-    WFCTile[] PossibleNeighbors(Point p, Point dir)
+    void PossibleNeighbors(Point p, Point dir, HashSet<WFCTile> foundTiles)
     {
-        List<int> connectors = new();
+        HashSet<int> connectors = new();
 
-        foreach (var possibility in Possibilities(p))
+        foreach (WFCTile possibility in GetCell(p))
         {
-            int connector = -1;
-
-            if (dir == new Point(1, 0))
-                connector = possibility.right;
-            if (dir == new Point(-1, 0))
-                connector = possibility.left;
-            if (dir == new Point(0, 1))
-                connector = possibility.top;
-            if (dir == new Point(0, -1))
-                connector = possibility.bottom;
-
-            if (!connectors.Contains(connector))
-                connectors.Add(connector);
+            int connector = (dir.x, dir.y) switch
+            {
+                (1, 0) => possibility.right,
+                (-1, 0) => possibility.left,
+                (0, 1) => possibility.top,
+                (0, -1) => possibility.bottom,
+                _ => -1,
+            };
+            connectors.Add(connector);
         }
 
-        List<WFCTile> tileList = new();
-        foreach (var tile in tiles)
+        foreach (WFCTile tile in tiles)
         {
-            int connector = -1;
-
-            if (dir == new Point(1, 0))
-                connector = tile.left;
-            if (dir == new Point(-1, 0))
-                connector = tile.right;
-            if (dir == new Point(0, 1))
-                connector = tile.bottom;
-            if (dir == new Point(0, -1))
-                connector = tile.top;
-
+            int connector = (dir.x, dir.y) switch
+            {
+                (1, 0) => tile.left,
+                (-1, 0) => tile.right,
+                (0, 1) => tile.bottom,
+                (0, -1) => tile.top,
+                _ => -1
+            };
             if (connectors.Contains(connector))
-                if (!tileList.Contains(tile))
-                    tileList.Add(tile);
+            {
+                foundTiles.Add(tile);
+            }
         }
-
-        return tileList.ToArray();
     }
 
     bool IsCollapsed(Point p) => IsCollapsed(p.x, p.y);
