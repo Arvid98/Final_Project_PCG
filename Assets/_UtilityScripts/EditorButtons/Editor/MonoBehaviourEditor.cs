@@ -13,7 +13,6 @@ public class MonoBehaviourEditor : Editor
         buttonManager = new MakeButtonManager(target);
     }
 
-
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
