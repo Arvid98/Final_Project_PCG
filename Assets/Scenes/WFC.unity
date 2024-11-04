@@ -151,6 +151,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 258e06c35795f1440a14ba02c5bc7321, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  width: 24
+  height: 24
+  candidateSelection: 2
+  tileSelection: 0
+  timePerStep: 0.005
   tiles:
   - id: 0
     left:
@@ -208,11 +213,6 @@ MonoBehaviour:
     - TileId: 1
       Weight: 0
     weight: 0
-  width: 24
-  height: 24
-  candidateSelection: 2
-  tileSelection: 0
-  timePerStep: 0.005
 --- !u!4 &144755299
 Transform:
   m_ObjectHideFlags: 0
