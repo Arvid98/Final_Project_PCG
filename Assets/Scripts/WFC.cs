@@ -6,22 +6,6 @@ using System.Collections;
 using Random = UnityEngine.Random;
 using Unity.Collections;
 
-[Serializable]
-public class WFCButtons
-{
-    private WFC self;
-
-    public int wtf;
-
-    public WFCButtons(WFC self)
-    {
-        this.self = self;
-    }
-
-    [MakeButton(false)] 
-    public void Play() => self.PlayCore();
-}
-
 public class WFC : MonoBehaviour
 {
     [SerializeField] int width = 16;
@@ -29,9 +13,6 @@ public class WFC : MonoBehaviour
     [SerializeField] CandidateSelection candidateSelection;
     [SerializeField] TileSelection tileSelection;
     [SerializeField] float timePerStep = 0.01f;
-
-    [SerializeField]
-    WFCButtons buttons;
 
     [SerializeField] WFCTile[] tiles;
 
@@ -115,11 +96,6 @@ public class WFC : MonoBehaviour
         Weighted
     }
 
-    private void Awake()
-    {
-        buttons = new(this);
-    }
-
     public void SetCell(int x, int y, WFCTile tile)
     {
         NullCheck();
@@ -145,15 +121,17 @@ public class WFC : MonoBehaviour
     {
         return x >= 0 && y >= 0 && x < width && y < height;
     }
-
-    void AlignCameraCore()
+    
+    [MakeButton]
+    void AlignCamera()
     {
         Camera camera = Camera.main;
         camera.transform.position = new Vector3(width / 2, height / 2, -1);
         camera.orthographicSize = Math.Max(width, height) / 2;
     }
 
-    void ClearGridCore()
+    [MakeButton]
+    void ClearGrid()
     {
         cells = new HashSet<WFCTile>[width, height];
         collapsed = new bool[width, height];
@@ -174,11 +152,11 @@ public class WFC : MonoBehaviour
     void NullCheck()
     {
         if (cells == null || collapsed == null || pStack == null)
-            ClearGridCore();
+            ClearGrid();
     }
 
     [MakeButton(false)]
-    internal void PlayCore()
+    void Play()
     {
         if (!Application.isPlaying)
         {
@@ -189,8 +167,9 @@ public class WFC : MonoBehaviour
 
         play = true;
     }
-
-    private void PauseCore()
+    
+    [MakeButton]
+    private void Pause()
     {
         play = false;
     }
@@ -207,7 +186,7 @@ public class WFC : MonoBehaviour
         {
             timer -= timePerStep;
 
-            StepCore();
+            Step();
         }
     }
 
@@ -218,8 +197,9 @@ public class WFC : MonoBehaviour
 
         TryPlay();
     }
-
-    void StepCore()
+    
+    [MakeButton]
+    void Step()
     {
         if (!Application.isPlaying)
         {
