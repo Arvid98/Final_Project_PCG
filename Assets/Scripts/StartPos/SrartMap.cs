@@ -1,17 +1,12 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
-public class GridManager : MonoBehaviour
+public class StartMap : MonoBehaviour
 {
-    [Header("Tile Prefabs")]
-    public GameObject tilePrefab;
-    public GameObject playerStartPositionPrefab;
-    public GameObject playerTwoStartPositionPrefab;
-    public GameObject goldTilePrefab;
-    public GameObject stoneTilePrefab;
-    public GameObject forestTilePrefab;
-
     [Header("WFCTiles")]
+    public WFCTile playerOneTile;
+    public WFCTile playerTwoTile;
     public WFCTile baseTile;
     public WFCTile goldTile;
     public WFCTile stoneTile;
@@ -20,7 +15,6 @@ public class GridManager : MonoBehaviour
     [Header("Grid Settings")]
     public int gridWidth = 10;
     public int gridHeight = 10;
-    public float tileSize = 1.0f;
 
     [Header("Distance Constraints")]
     public float minDistanceBetweenStarts = 3.0f;
@@ -30,11 +24,11 @@ public class GridManager : MonoBehaviour
     [Header("Gold Tile Settings")]
     public float goldOffsetDistance = 3.0f;
     public float extraGoldDistanceFromPlayer = 4.0f;
-    public int numAdjacentGoldTiles = 3;  
+    public int numAdjacentGoldTiles = 3;
 
     [Header("Stone Tile Settings")]
     public float stoneDistanceFromPlayer = 4.0f;
-    public int numAdjacentStoneTiles = 3; 
+    public int numAdjacentStoneTiles = 3;
 
     [Header("Forest Tile Settings")]
     public float forestDistanceFromPlayer = 7.0f;
@@ -42,102 +36,177 @@ public class GridManager : MonoBehaviour
     public float maxForestSpreadDistance = 3.0f;
     public int numberOfForest = 3;
 
+    private int[,] grid;
     private List<Vector2> usedPositions = new List<Vector2>();
     private Vector2 playerOnePosition;
     private Vector2 playerTwoPosition;
-
+    WFC wFC;
     void Start()
     {
+        wFC = FindAnyObjectByType<WFC>();
         Setup();
     }
 
-    //[MakeButton("Start")]
+    //public void Setup()
+    //{
+    //    Clear();
+    //    grid = new int[gridWidth, gridHeight];
+    //    SetRandomPlayerStartPositions();
+    //    SetGoldTiles();
+    //    SetStoneTiles();
+    //    SetExtraGoldTiles();
+    //    SetForestTiles();
+    //    wFC.Tiles = GetTiles();
+    //}
     public void Setup()
     {
         Clear();
+        
         SetRandomPlayerStartPositions();
         SetGoldTiles();
         SetStoneTiles();
         SetExtraGoldTiles();
         SetForestTiles();
-        GenerateGrid();
-    }
 
-    public void Clear()
+        //wFC.CollapseWithStartMapGrid(grid, GetTiles());
+        //wFC.Tiles = GetTileTyp();
+        AddTilesToWFCTiles();
+        UpdateGridWithTiles();
+
+
+    }
+    void AddTilesToWFCTiles()
     {
-        foreach (Transform child in transform)
+        List<WFCTile> currentTiles = new List<WFCTile>(wFC.Tiles);
+        List<WFCTile> tilesToAdd = GetTileTyp().ToList(); 
+
+        foreach (var tile in tilesToAdd)
         {
-            Destroy(child.gameObject);
+            if (!currentTiles.Contains(tile))
+            {
+                currentTiles.Add(tile);
+            }
         }
-        usedPositions.Clear();
-    }
 
-    void GenerateGrid()
+        wFC.Tiles = currentTiles.ToArray();
+    }
+    void UpdateGridWithTiles()
     {
+        if (wFC == null)
+            return;
+
         for (int x = 0; x < gridWidth; x++)
         {
             for (int y = 0; y < gridHeight; y++)
             {
-                Vector2 position = new Vector2(x, y);
-                if (usedPositions.Contains(position)) continue;
+                int tileId = grid[x, y];
+                WFCTile tile = GetTileById(tileId);
 
-                Vector3 tilePosition = new Vector3(x * tileSize, y * tileSize, 0);
-                Instantiate(tilePrefab, tilePosition, Quaternion.identity, transform);
+
+                if (tile != null && tile != baseTile)
+                {
+                    wFC.SetCell(x, y, tile);
+                }
             }
         }
+    }
+    public void Clear()
+    {
+        usedPositions.Clear();
+        grid = new int[gridWidth, gridHeight];
+    }
+    public WFCTile[] GetTileTyp()
+    {
+        List<WFCTile> uniqueTiles = new List<WFCTile> { playerOneTile, playerTwoTile, baseTile, goldTile, stoneTile, forestTile };
+
+
+        return uniqueTiles.ToArray();
+
+       
+    }
+    public WFCTile[] GetTiles()
+    {
+        List<WFCTile> uniqueTiles = new List<WFCTile>();
+
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                int tileId = grid[x, y];
+                WFCTile tile = GetTileById(tileId);
+                if (tile != null && !uniqueTiles.Contains(tile) )
+                {
+                    uniqueTiles.Add(tile);
+                }
+            }
+        }
+
+        return uniqueTiles.ToArray();
+    }
+
+    private WFCTile GetTileById(int id)
+    {
+        if (playerOneTile != null && playerOneTile.id == id) return playerOneTile;
+        if (playerTwoTile != null && playerTwoTile.id == id) return playerTwoTile;
+        if (baseTile != null && baseTile.id == id) return baseTile;
+        if (goldTile != null && goldTile.id == id) return goldTile;
+        if (stoneTile != null && stoneTile.id == id) return stoneTile;
+        if (forestTile != null && forestTile.id == id) return forestTile;
+        return null;
     }
 
     void SetRandomPlayerStartPositions()
     {
         playerOnePosition = GetValidRandomPosition();
         usedPositions.Add(playerOnePosition);
-        Instantiate(playerStartPositionPrefab, new Vector3(playerOnePosition.x * tileSize, playerOnePosition.y * tileSize, 0), Quaternion.identity, transform);
+        grid[(int)playerOnePosition.x, (int)playerOnePosition.y] = playerOneTile.id;
+
+        //wFC.SetCell((int)playerOnePosition.x, (int)playerOnePosition.y, playerOneTile);
 
         playerTwoPosition = GetValidRandomPosition();
         usedPositions.Add(playerTwoPosition);
-        Instantiate(playerTwoStartPositionPrefab, new Vector3(playerTwoPosition.x * tileSize, playerTwoPosition.y * tileSize, 0), Quaternion.identity, transform);
+        grid[(int)playerTwoPosition.x, (int)playerTwoPosition.y] = playerTwoTile.id;
+
+        //wFC.SetCell((int)playerTwoPosition.x, (int)playerTwoPosition.y, playerTwoTile);
     }
 
     void SetGoldTiles()
     {
-       
         Vector2 goldPositionOne = GetPositionInDirection(playerOnePosition, playerTwoPosition, goldOffsetDistance);
         usedPositions.Add(goldPositionOne);
-        Instantiate(goldTilePrefab, new Vector3(goldPositionOne.x * tileSize, goldPositionOne.y * tileSize, 0), Quaternion.identity, transform);
-        PlaceAdjacentTiles(goldPositionOne, goldTilePrefab, numAdjacentGoldTiles);
+        grid[(int)goldPositionOne.x, (int)goldPositionOne.y] = goldTile.id;
+        PlaceAdjacentTiles(goldPositionOne, goldTile, numAdjacentGoldTiles);
 
-     
         Vector2 goldPositionTwo = GetPositionInDirection(playerTwoPosition, playerOnePosition, goldOffsetDistance);
         usedPositions.Add(goldPositionTwo);
-        Instantiate(goldTilePrefab, new Vector3(goldPositionTwo.x * tileSize, goldPositionTwo.y * tileSize, 0), Quaternion.identity, transform);
-        PlaceAdjacentTiles(goldPositionTwo, goldTilePrefab, numAdjacentGoldTiles);
+        grid[(int)goldPositionTwo.x, (int)goldPositionTwo.y] = goldTile.id;
+        PlaceAdjacentTiles(goldPositionTwo, goldTile, numAdjacentGoldTiles);
     }
-
 
     void SetStoneTiles()
     {
         Vector2 stonePositionOne = GetPositionAtDistance(playerOnePosition, stoneDistanceFromPlayer);
         usedPositions.Add(stonePositionOne);
-        Instantiate(stoneTilePrefab, new Vector3(stonePositionOne.x * tileSize, stonePositionOne.y * tileSize, 0), Quaternion.identity, transform);
-        PlaceAdjacentTiles(stonePositionOne, stoneTilePrefab, numAdjacentStoneTiles);
+        grid[(int)stonePositionOne.x, (int)stonePositionOne.y] = stoneTile.id;
+        PlaceAdjacentTiles(stonePositionOne, stoneTile, numAdjacentStoneTiles);
 
         Vector2 stonePositionTwo = GetPositionAtDistance(playerTwoPosition, stoneDistanceFromPlayer);
         usedPositions.Add(stonePositionTwo);
-        Instantiate(stoneTilePrefab, new Vector3(stonePositionTwo.x * tileSize, stonePositionTwo.y * tileSize, 0), Quaternion.identity, transform);
-        PlaceAdjacentTiles(stonePositionTwo, stoneTilePrefab, numAdjacentStoneTiles);
+        grid[(int)stonePositionTwo.x, (int)stonePositionTwo.y] = stoneTile.id;
+        PlaceAdjacentTiles(stonePositionTwo, stoneTile, numAdjacentStoneTiles);
     }
 
     void SetExtraGoldTiles()
     {
         Vector2 extraGoldPositionOne = GetPositionAtDistance(playerOnePosition, extraGoldDistanceFromPlayer);
         usedPositions.Add(extraGoldPositionOne);
-        Instantiate(goldTilePrefab, new Vector3(extraGoldPositionOne.x * tileSize, extraGoldPositionOne.y * tileSize, 0), Quaternion.identity, transform);
-        PlaceAdjacentTiles(extraGoldPositionOne, goldTilePrefab, numAdjacentGoldTiles);
+        grid[(int)extraGoldPositionOne.x, (int)extraGoldPositionOne.y] = goldTile.id;
+        PlaceAdjacentTiles(extraGoldPositionOne, goldTile, numAdjacentGoldTiles);
 
         Vector2 extraGoldPositionTwo = GetPositionAtDistance(playerTwoPosition, extraGoldDistanceFromPlayer);
         usedPositions.Add(extraGoldPositionTwo);
-        Instantiate(goldTilePrefab, new Vector3(extraGoldPositionTwo.x * tileSize, extraGoldPositionTwo.y * tileSize, 0), Quaternion.identity, transform);
-        PlaceAdjacentTiles(extraGoldPositionTwo, goldTilePrefab, numAdjacentGoldTiles);
+        grid[(int)extraGoldPositionTwo.x, (int)extraGoldPositionTwo.y] = goldTile.id;
+        PlaceAdjacentTiles(extraGoldPositionTwo, goldTile, numAdjacentGoldTiles);
     }
 
     void SetForestTiles()
@@ -153,7 +222,7 @@ public class GridManager : MonoBehaviour
     {
         Vector2 forestCenterPosition = GetPositionAtDistance(origin, forestDistanceFromPlayer);
         usedPositions.Add(forestCenterPosition);
-        Instantiate(forestTilePrefab, new Vector3(forestCenterPosition.x * tileSize, forestCenterPosition.y * tileSize, 0), Quaternion.identity, transform);
+        grid[(int)forestCenterPosition.x, (int)forestCenterPosition.y] = forestTile.id;
 
         int placedTiles = 0;
         while (placedTiles < numAdjacentForestTiles)
@@ -171,13 +240,13 @@ public class GridManager : MonoBehaviour
             if (!usedPositions.Contains(forestPosition))
             {
                 usedPositions.Add(forestPosition);
-                Instantiate(forestTilePrefab, new Vector3(forestPosition.x * tileSize, forestPosition.y * tileSize, 0), Quaternion.identity, transform);
+                grid[(int)forestPosition.x, (int)forestPosition.y] = forestTile.id;
                 placedTiles++;
             }
         }
     }
 
-    void PlaceAdjacentTiles(Vector2 centerPosition, GameObject tilePrefab, int numTiles)
+    void PlaceAdjacentTiles(Vector2 centerPosition, WFCTile tile, int numTiles)
     {
         int placedTiles = 0;
         float spreadDistance = 1.5f;
@@ -197,7 +266,7 @@ public class GridManager : MonoBehaviour
             if (!usedPositions.Contains(tilePosition))
             {
                 usedPositions.Add(tilePosition);
-                Instantiate(tilePrefab, new Vector3(tilePosition.x * tileSize, tilePosition.y * tileSize, 0), Quaternion.identity, transform);
+                grid[(int)tilePosition.x, (int)tilePosition.y] = tile.id;
                 placedTiles++;
             }
         }
@@ -236,6 +305,16 @@ public class GridManager : MonoBehaviour
         return randomPosition;
     }
 
+    Vector2 GetPositionInDirection(Vector2 start, Vector2 target, float distance)
+    {
+        Vector2 direction = (target - start).normalized;
+        Vector2 newPosition = start + direction * distance;
+        newPosition = new Vector2(Mathf.Round(newPosition.x), Mathf.Round(newPosition.y));
+        newPosition.x = Mathf.Clamp(newPosition.x, 0, gridWidth - 1);
+        newPosition.y = Mathf.Clamp(newPosition.y, 0, gridHeight - 1);
+        return newPosition;
+    }
+
     Vector2 GetPositionAtDistance(Vector2 origin, float distance)
     {
         Vector2[] directions = { Vector2.up, Vector2.down, Vector2.left, Vector2.right,
@@ -259,19 +338,6 @@ public class GridManager : MonoBehaviour
 
         return origin + Vector2.up * distance;
     }
-    Vector2 GetPositionInDirection(Vector2 start, Vector2 target, float distance)
-    {
-        Vector2 direction = (target - start).normalized;
-
-        Vector2 newPosition = start + direction * distance;
-
-        newPosition = new Vector2(Mathf.Round(newPosition.x), Mathf.Round(newPosition.y));
-
-        newPosition.x = Mathf.Clamp(newPosition.x, 0, gridWidth - 1);
-        newPosition.y = Mathf.Clamp(newPosition.y, 0, gridHeight - 1);
-
-        return newPosition;
-    }
 
     void ShuffleArray(Vector2[] array)
     {
@@ -282,5 +348,10 @@ public class GridManager : MonoBehaviour
             array[i] = array[j];
             array[j] = temp;
         }
+    }
+
+    public int[,] GetGrid()
+    {
+        return grid;
     }
 }

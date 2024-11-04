@@ -51,7 +51,37 @@ public class WFC : MonoBehaviour
             return cells;
         }
     }
+    //public void CollapseWithStartMapGrid(int[,] startMapGrid, WFCTile[] startMapTiles)
+    //{
+    //    //NullCheck();
+    //    Tiles = startMapTiles;
 
+    //    for (int x = 0; x < width; x++)
+    //    {
+    //        for (int y = 0; y < height; y++)
+    //        {
+    //            int tileId = startMapGrid[x, y];
+
+    //            WFCTile tile = GetTileById(tileId);
+
+    //            //if (tile != null && !IsCollapsed(x, y))
+    //            {
+    //                SetCell(x, y, tile);
+    //            }
+    //        }
+    //    }
+    //}
+
+   
+    private WFCTile GetTileById(int id)
+    {
+        foreach (WFCTile tile in Tiles)
+        {
+            if (tile.id == id)
+                return tile;
+        }
+        return null;
+    }
     public enum CandidateSelection
     {
         Random,
@@ -305,7 +335,7 @@ public class WFC : MonoBehaviour
 
         if (superPositions.Count == 0)
         {
-            Debug.Log("WFC - Tried to collapse but had no solutions.");
+            Debug.Log($"WFC - Tried to collapse but had no solutions. {x} {y}" );
             play = false;
             return;
         }
@@ -452,10 +482,10 @@ public class WFC : MonoBehaviour
         {
             int connector = (dir.x, dir.y) switch
             {
-                (1, 0) => possibility.right[0].TileId,
-                (-1, 0) => possibility.left[0].TileId,
-                (0, 1) => possibility.top[0].TileId,
-                (0, -1) => possibility.bottom[0].TileId,
+                (1, 0) => possibility.right.FirstOrDefault().TileId,
+                (-1, 0) => possibility.left.FirstOrDefault().TileId,
+                (0, 1) => possibility.top.FirstOrDefault().TileId,
+                (0, -1) => possibility.bottom.FirstOrDefault().TileId,
                 _ => -1,
             };
             connectors.Add(connector);
@@ -465,10 +495,10 @@ public class WFC : MonoBehaviour
         {
             int connector = (dir.x, dir.y) switch
             {
-                (1, 0) => tile.left[0].TileId,
-                (-1, 0) => tile.right[0].TileId,
-                (0, 1) => tile.bottom[0].TileId,
-                (0, -1) => tile.top[0].TileId,
+                (1, 0) => tile.left.FirstOrDefault().TileId,
+                (-1, 0) => tile.right.FirstOrDefault().TileId,
+                (0, 1) => tile.bottom.FirstOrDefault().TileId,
+                (0, -1) => tile.top.FirstOrDefault().TileId,
                 _ => -1
             };
             if (connectors.Contains(connector))
