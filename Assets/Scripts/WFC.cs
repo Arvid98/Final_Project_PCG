@@ -6,6 +6,7 @@ using System.Collections;
 using Random = UnityEngine.Random;
 using Unity.Collections;
 
+[Serializable]
 public class WFCButtons
 {
     private WFC self;
@@ -176,6 +177,7 @@ public class WFC : MonoBehaviour
             ClearGridCore();
     }
 
+    [MakeButton(false)]
     internal void PlayCore()
     {
         if (!Application.isPlaying)
@@ -500,10 +502,10 @@ public class WFC : MonoBehaviour
         {
             int connector = (dir.x, dir.y) switch
             {
-                (1, 0) => possibility.right[0].TileId,
-                (-1, 0) => possibility.left[0].TileId,
-                (0, 1) => possibility.top[0].TileId,
-                (0, -1) => possibility.bottom[0].TileId,
+                (1, 0) => possibility.right.FirstOrDefault().TileId,
+                (-1, 0) => possibility.left.FirstOrDefault().TileId,
+                (0, 1) => possibility.top.FirstOrDefault().TileId,
+                (0, -1) => possibility.bottom.FirstOrDefault().TileId,
                 _ => -1,
             };
             connectors.Add(connector);
@@ -513,10 +515,10 @@ public class WFC : MonoBehaviour
         {
             int connector = (dir.x, dir.y) switch
             {
-                (1, 0) => tile.left[0].TileId,
-                (-1, 0) => tile.right[0].TileId,
-                (0, 1) => tile.bottom[0].TileId,
-                (0, -1) => tile.top[0].TileId,
+                (1, 0) => tile.left.FirstOrDefault().TileId,
+                (-1, 0) => tile.right.FirstOrDefault().TileId,
+                (0, 1) => tile.bottom.FirstOrDefault().TileId,
+                (0, -1) => tile.top.FirstOrDefault().TileId,
                 _ => -1
             };
             if (connectors.Contains(connector))
