@@ -1,6 +1,4 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class RuleList
@@ -16,18 +14,22 @@ public class RuleList
         colors = new HashSet<Color[]>(comarer);
         colorsList = new List<Edge>();
     }
-    public int GetRuleId(Color[] c)
+
+    public List<ConnectorDef> GetRuleId(Color[] c)
     {
+        var list = new List<ConnectorDef>();
         if (colors.Add(c))
         {
             int pos = colorsList.Count;
             colorsList.Add(new Edge(c));
-            return pos;
+            list.Add(new ConnectorDef() { TileId = pos });
         }
         else
         {
-            return colorsList.IndexOf(new Edge(c)); //stupid and stupid
+            list.Add(new ConnectorDef() { TileId = colorsList.IndexOf(new Edge(c)) }); //stupid and stupid
         }
+
+        return list;
     }
 }
 

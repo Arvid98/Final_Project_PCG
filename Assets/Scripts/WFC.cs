@@ -6,14 +6,33 @@ using System.Collections;
 using Random = UnityEngine.Random;
 using Unity.Collections;
 
+public class WFCButtons
+{
+    private WFC self;
+
+    public int wtf;
+
+    public WFCButtons(WFC self)
+    {
+        this.self = self;
+    }
+
+    [MakeButton(false)] 
+    public void Play() => self.PlayCore();
+}
+
 public class WFC : MonoBehaviour
 {
-    [SerializeField] WFCTile[] tiles;
     [SerializeField] int width = 16;
     [SerializeField] int height = 16;
     [SerializeField] CandidateSelection candidateSelection;
     [SerializeField] TileSelection tileSelection;
     [SerializeField] float timePerStep = 0.01f;
+
+    [SerializeField]
+    WFCButtons buttons;
+
+    [SerializeField] WFCTile[] tiles;
 
     HashSet<WFCTile>[,] cells;
     bool[,] collapsed;
@@ -95,6 +114,11 @@ public class WFC : MonoBehaviour
         Weighted
     }
 
+    private void Awake()
+    {
+        buttons = new(this);
+    }
+
     public void SetCell(int x, int y, WFCTile tile)
     {
         NullCheck();
@@ -121,16 +145,14 @@ public class WFC : MonoBehaviour
         return x >= 0 && y >= 0 && x < width && y < height;
     }
 
-    [MakeButton("Align camera")]
-    void AlignCamera()
+    void AlignCameraCore()
     {
         Camera camera = Camera.main;
         camera.transform.position = new Vector3(width / 2, height / 2, -1);
         camera.orthographicSize = Math.Max(width, height) / 2;
     }
 
-    [MakeButton("Clear grid")]
-    void Clear()
+    void ClearGridCore()
     {
         cells = new HashSet<WFCTile>[width, height];
         collapsed = new bool[width, height];
@@ -151,11 +173,10 @@ public class WFC : MonoBehaviour
     void NullCheck()
     {
         if (cells == null || collapsed == null || pStack == null)
-            Clear();
+            ClearGridCore();
     }
 
-    [MakeButton(false)]
-    void Play()
+    internal void PlayCore()
     {
         if (!Application.isPlaying)
         {
@@ -167,8 +188,7 @@ public class WFC : MonoBehaviour
         play = true;
     }
 
-    [MakeButton]
-    private void Pause()
+    private void PauseCore()
     {
         play = false;
     }
@@ -185,7 +205,7 @@ public class WFC : MonoBehaviour
         {
             timer -= timePerStep;
 
-            Step();
+            StepCore();
         }
     }
 
@@ -197,8 +217,7 @@ public class WFC : MonoBehaviour
         TryPlay();
     }
 
-    [MakeButton]
-    void Step()
+    void StepCore()
     {
         if (!Application.isPlaying)
         {
@@ -481,10 +500,10 @@ public class WFC : MonoBehaviour
         {
             int connector = (dir.x, dir.y) switch
             {
-                (1, 0) => possibility.right,
-                (-1, 0) => possibility.left,
-                (0, 1) => possibility.top,
-                (0, -1) => possibility.bottom,
+                (1, 0) => possibility.right[0].TileId,
+                (-1, 0) => possibility.left[0].TileId,
+                (0, 1) => possibility.top[0].TileId,
+                (0, -1) => possibility.bottom[0].TileId,
                 _ => -1,
             };
             connectors.Add(connector);
@@ -494,10 +513,10 @@ public class WFC : MonoBehaviour
         {
             int connector = (dir.x, dir.y) switch
             {
-                (1, 0) => tile.left,
-                (-1, 0) => tile.right,
-                (0, 1) => tile.bottom,
-                (0, -1) => tile.top,
+                (1, 0) => tile.left[0].TileId,
+                (-1, 0) => tile.right[0].TileId,
+                (0, 1) => tile.bottom[0].TileId,
+                (0, -1) => tile.top[0].TileId,
                 _ => -1
             };
             if (connectors.Contains(connector))

@@ -5,6 +5,7 @@ using UnityEngine;
 public class MakeButtonManager
 {
     const BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
     private readonly List<MakeButton> makeButtons = new();
 
     public MakeButtonManager(Object target)
