@@ -21,6 +21,76 @@ public class TileRuleMaker : MonoBehaviour
     {
         
     }
+    [MakeButton]
+    public void AddAllToList()
+    {
+        TextureArrayList list = GetComponent<TextureArrayList>();
+        TileTextureList tiles = GetComponent<TileTextureList>();
+
+        for (int i = 0; i < tiles.Textures.Count; i++)
+        {
+
+
+
+            Texture2D tex = CopyTexture(tiles.Textures[i]);
+
+            int n = list.Count;
+
+            list.Add(tex); //add as is
+                           //add rotations
+            list.Add(ManipulateTexture(tex, Rotate90));
+            list.Add(ManipulateTexture(tex, Rotate90));
+            list.Add(ManipulateTexture(tex, Rotate90));
+
+            //currently tex is at 270 deg rot
+
+            //flip horizontaly and try its rotations
+            tex = CopyTexture(tiles.Textures[i]); //reset
+            list.Add(ManipulateTexture(tex, FlipH));
+            list.Add(ManipulateTexture(tex, Rotate90));
+            list.Add(ManipulateTexture(tex, Rotate90));
+            list.Add(ManipulateTexture(tex, Rotate90));
+
+            //flip vertically and try its rotations
+            tex = CopyTexture(tiles.Textures[i]); //reset
+            list.Add(ManipulateTexture(tex, FlipV));
+            list.Add(ManipulateTexture(tex, Rotate90));
+            list.Add(ManipulateTexture(tex, Rotate90));
+            list.Add(ManipulateTexture(tex, Rotate90));
+
+            int diff = (list.Count - n);
+
+            float weight = 1.0f / (diff > 0 ? diff : 1);
+
+            //this finds all versions of a texture, and weight.. but do not bind it to anything
+            //each successfull add should be recorded and edges(rules) added for that id..
+
+
+
+        }
+    }
+
+    [MakeButton]
+    public void InjectRules()
+    {
+        var m = FindAnyObjectByType<WFC>();
+        m.Tiles = tiles.ToArray();
+       // m.OnCellChanged
+    }
+
+    [MakeButton]
+    public void InjectSprites()
+    {
+        var m = FindAnyObjectByType<WFCDisplay>();
+        var ta = FindAnyObjectByType<TextureArrayList>();
+        Sprite[] sprites = new Sprite[ta.Count];
+
+        for (int i = 0; i < sprites.Length; i++)
+        {
+            sprites[i] = Sprite.Create(ta.List[i], new Rect(0,0,5,5), Vector2.zero);
+        }
+        m.sprites = sprites;
+    }
 
     [MakeButton]
     public void AddToList()
@@ -79,6 +149,7 @@ public class TileRuleMaker : MonoBehaviour
         {
             WFCTile tile = new WFCTile();
             tile.id = i;
+            tile.weight = 1;
             CreateRules(list[i], tile);
             tiles.Add(tile);
         }
@@ -172,8 +243,8 @@ public class TileRuleMaker : MonoBehaviour
 
     public void CreateRules(Texture2D texture, WFCTile tile)
     {
-        Color[] top = texture.GetPixels(0, 0, texture.width, 1);
-        Color[] bottom = texture.GetPixels(0, texture.height-1, texture.width, 1);
+        Color[] bottom = texture.GetPixels(0, 0, texture.width, 1);
+        Color[] top = texture.GetPixels(0, texture.height-1, texture.width, 1);
         Color[] left = texture.GetPixels(0, 0, 1, texture.height);
         Color[] right = texture.GetPixels(texture.width - 1, 0, 1, texture.height);
 

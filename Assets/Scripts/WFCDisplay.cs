@@ -4,8 +4,11 @@ using UnityEngine;
 [RequireComponent(typeof(Renderer))]
 public class WFCDisplay : MonoBehaviour
 {
+    [SerializeField] public Sprite[] sprites;
     [SerializeField] Color[] colors;
     [SerializeField] Color defaultColor = Color.white;
+
+    public Sprite[] Sprites => sprites;
 
     Renderer rend;
     Texture2D texture;
@@ -31,9 +34,9 @@ public class WFCDisplay : MonoBehaviour
         if (rend == null)
             rend = GetComponent<Renderer>();
 
-        if (texture == null || texture.width != wfc.Width || texture.height != wfc.Height)
+        if (texture == null || texture.width != wfc.Width * sprites[0].textureRect.width || texture.height != wfc.Height * sprites[0].textureRect.height)
         {
-            texture = new Texture2D(wfc.Width, wfc.Height);
+            texture = new Texture2D(wfc.Width * (int)sprites[0].textureRect.width, wfc.Height * (int)sprites[0].textureRect.height);
             texture.wrapMode = TextureWrapMode.Clamp;
             texture.filterMode = FilterMode.Point;
 
@@ -60,15 +63,47 @@ public class WFCDisplay : MonoBehaviour
         texture.SetPixel(x, y, color);
     }
 
+    //void OnCellChanged(int x, int y, int id)
+    //{
+    //    NullCheck();
+
+    //    Color color = defaultColor;
+
+    //    if (id >= 0)
+    //        color = colors[id];
+
+    //    Set(x, y, color);
+    //}
+
     void OnCellChanged(int x, int y, int id)
     {
         NullCheck();
 
-        Color color = defaultColor;
+        x *= (int)sprites[0].textureRect.width;
+        y *= (int)sprites[0].textureRect.height;
 
         if (id >= 0)
-            color = colors[id];
+        {
+            Sprite sprite = sprites[id];
 
-        Set(x, y, color);
+            for (int i = 0; i < sprite.textureRect.width; i++)
+            {
+                for (int j = 0; j < sprite.textureRect.height; j++)
+                {
+                    Set(x + i, y + j, sprite.texture.GetPixel((int)sprite.textureRect.x + i, (int)sprite.textureRect.y + j));
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < sprites[0].textureRect.width; i++)
+            {
+                for (int j = 0; j < sprites[0].textureRect.height; j++)
+                {
+                    Set(x + i, y + j, defaultColor);
+                }
+            }
+        }
     }
+
 }

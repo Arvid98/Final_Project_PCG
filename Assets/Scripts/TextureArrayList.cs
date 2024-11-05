@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class TextureArrayList : MonoBehaviour
 {
-    [SerializeField] private List<Texture2D> list = new List<Texture2D>();
+    [SerializeField] private List<Texture2D> list;
 
     public int Count => list.Count;  
     public List<Texture2D> List => list;

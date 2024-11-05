@@ -97,6 +97,9 @@ public class WFC : MonoBehaviour
     {
         NullCheck();
 
+
+        tile = Tiles[tile.id];
+
         if (!OnCanvas(x, y))
             Debug.LogError("(" + x + ", " + y + ") is not a valid cell. It's outside of the canvas.");
 
@@ -120,7 +123,7 @@ public class WFC : MonoBehaviour
     }
 
     [MakeButton("Clear grid")]
-    void Clear()
+    public void Clear()
     {
         cells = new List<WFCTile>[width, height];
         collapsed = new bool[width, height];

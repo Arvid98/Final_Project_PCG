@@ -58,8 +58,10 @@ public class StartMap : MonoBehaviour
     //    SetForestTiles();
     //    wFC.Tiles = GetTiles();
     //}
+    [MakeButton]
     public void Setup()
     {
+        wFC.Clear();
         Clear();
         
         SetRandomPlayerStartPositions();
@@ -70,7 +72,7 @@ public class StartMap : MonoBehaviour
 
         //wFC.CollapseWithStartMapGrid(grid, GetTiles());
         //wFC.Tiles = GetTileTyp();
-        AddTilesToWFCTiles();
+        //AddTilesToWFCTiles();
         UpdateGridWithTiles();
 
 
