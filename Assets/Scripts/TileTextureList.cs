@@ -27,11 +27,13 @@ public class TileTextureList : MonoBehaviour
     [MakeButton]
     public void ViewTexture()
     {
-        if(textureToRender == null)
+        if(textureToRender == null || textureToRender.format != textures[currentTexture].format)
         {
             textureToRender = new Texture2D(textures[currentTexture].width, textures[currentTexture].height, textures[currentTexture].format,false);
             textureToRender.wrapMode = textures[currentTexture].wrapMode; // TextureWrapMode.Clamp;
             textureToRender.filterMode = textures[currentTexture].filterMode; //FilterMode.Point;
+            //textureToRender.minimumMipmapLevel = textures[currentTexture].minimumMipmapLevel;
+            //textureToRender.
         }
 
         textureToRender.SetPixels32(textures[currentTexture].GetPixels32());
