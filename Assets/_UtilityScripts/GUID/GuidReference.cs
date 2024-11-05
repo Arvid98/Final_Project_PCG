@@ -21,11 +21,14 @@ public struct GuidReference
 
 
 #if UNITY_EDITOR
+#pragma warning disable CS0414 // The field is assigned but never used
     // decorate with some extra info in Editor so we can inform a user of what that GUID means
     [SerializeField]
     private string cachedName;
+    
     [SerializeField]
     private SceneAsset cachedScene;
+#pragma warning restore CS0414
 #endif
 
     public GameObject GameObject

@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -27,11 +29,11 @@ public class WFCDisplay : MonoBehaviour
     void OnEnable()
     {
         NullCheck();
-        wfc.OnCellChanged += OnCellChanged;
+        wfc.OnRectChanged += OnRectChanged;
     }
     void OnDisable()
     {
-        wfc.OnCellChanged -= OnCellChanged;
+        wfc.OnRectChanged -= OnRectChanged;
     }
 
     void NullCheck()
@@ -84,25 +86,39 @@ public class WFCDisplay : MonoBehaviour
         texture.SetPixel(x, y, color);
     }
 
-    void OnCellChanged(int x, int y, int id)
+    void OnRectChanged(RectInt rect)
     {
         NullCheck();
 
-        if (texture != null)
+        for (int ry = 0; ry < rect.height; ry++)
         {
-            Color color = defaultColor;
-            if ((uint)id < (uint)colors.Length)
-            {
-                color = colors[id];
-            }
-            SetPixel(x, y, color);
-        }
+            int y = ry + rect.y;
+            HashSet<int>[] row = wfc.runner.GetRow(y);
 
-        TileBase tile = defaultTile;
-        if ((uint)id < (uint)tiles.Length)
-        {
-            tile = tiles[id];
+            for (int rx = 0; rx < rect.width; rx++)
+            {
+                int x = rx + rect.x;
+
+                HashSet<int> cell = row[x];
+                int id = cell.Count > 0 ? cell.First() : -1;
+
+                if (texture != null)
+                {
+                    Color color = defaultColor;
+                    if ((uint)id < (uint)colors.Length)
+                    {
+                        color = colors[id];
+                    }
+                    SetPixel(x, y, color);
+                }
+
+                TileBase tile = defaultTile;
+                if ((uint)id < (uint)tiles.Length)
+                {
+                    tile = tiles[id];
+                }
+                tilemap.SetTile(new Vector3Int(x, y, 0), tile);
+            }
         }
-        tilemap.SetTile(new Vector3Int(x, y, 0), tile);
     }
 }

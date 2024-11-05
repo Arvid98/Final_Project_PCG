@@ -4,8 +4,6 @@ using UnityEngine;
 using System;
 using System.Collections;
 using Random = UnityEngine.Random;
-using Unity.Collections;
-using System.Threading;
 
 public class WFC : MonoBehaviour
 {
@@ -17,19 +15,15 @@ public class WFC : MonoBehaviour
 
     [SerializeField] WFCTile[] tiles;
 
-    HashSet<WFCTile>[][] cells;
-    BitArray[] collapsed;
-
     float timer;
     bool play;
 
-    List<Point> candidateList = new();
-    List<Point> furthestList = new();
-    
+    internal WFCRunner runner;
+
     /// <summary>
     /// Parameters: x, y, id
     /// </summary>
-    public Action<int, int, int> OnCellChanged;
+    public Action<RectInt>? OnRectChanged;
     public int Width => width;
     public int Height => height;
     public WFCTile[]? Tiles { get { return tiles; } set { tiles = value; } }
@@ -45,11 +39,11 @@ public class WFC : MonoBehaviour
 
             for (int y = 0; y < height; y++)
             {
-                var row = this.cells[y];
+                var row = runner.cells[y];
                 for (int x = 0; x < width; x++)
                 {
-                    if (IsCollapsed(x, y))
-                        cells[x, y] = row[x].First();
+                    if (runner.IsCollapsed(x, y))
+                        cells[x, y] = tiles[row[x].First()];
                 }
             }
 
@@ -87,27 +81,204 @@ public class WFC : MonoBehaviour
         }
         return null;
     }
-    public enum CandidateSelection
+
+    [MakeButton]
+    void AlignCamera()
     {
-        Random,
-        Ordered,
-        FurthestFromCenter
+        Camera camera = Camera.main;
+        camera.transform.position = new Vector3(width / 2, height / 2, -1);
+        camera.orthographicSize = Math.Max(width, height) / 2;
     }
 
-    public enum TileSelection
+    [MakeButton]
+    void ClearGrid()
     {
-        Random,
-        Ordered,
-        Weighted
+        runner = new WFCRunner(width, height, tiles.Select(t => new WfcTileData()
+        {
+            id = t.id,
+            weight = t.weight,
+            left = t.left,
+            right = t.right,
+            top = t.top,
+            bottom = t.bottom,
+        }).ToList());
+
+        runner.CandidateSelection = candidateSelection;
+        runner.TileSelection = tileSelection;
+
+        runner.Reset();
     }
 
-    public void SetCell(int x, int y, WFCTile tile)
+    [MakeButton(false)]
+    void Play()
     {
-        NullCheck();
+        if (!Application.isPlaying)
+        {
+            Debug.Log("WFC - Can only play in play mode");
+            return;
+        }
 
-        if (!OnCanvas(x, y))
-            Debug.LogError("(" + x + ", " + y + ") is not a valid cell. It's outside of the canvas.");
+        play = true;
+    }
 
+    [MakeButton]
+    void Pause()
+    {
+        play = false;
+    }
+
+    void TryPlay()
+    {
+        if (!play)
+            return;
+
+        timer += Time.deltaTime;
+
+        // this is bad if one step actually takes longer to do than timePerStep, can we check that using some system time?
+        while (play && timer >= timePerStep)
+        {
+            timer -= timePerStep;
+            if (!StepCore())
+            {
+                break;
+            }
+        }
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+            play = !play;
+
+        TryPlay();
+    }
+
+    [MakeButton]
+    void Step()
+    {
+        if (!Application.isPlaying)
+        {
+            Debug.Log("WFC - Can only step in play mode");
+            return;
+        }
+
+        StepCore();
+    }
+
+    bool StepCore()
+    {
+        var result = runner.Step(out Point point);
+        switch (result)
+        {
+            case WFCRunner.StepResult.OneStep:
+                OnRectChanged?.Invoke(new RectInt(point.x, point.y, 1, 1));
+                return true;
+
+            case WFCRunner.StepResult.Complete:
+                Debug.Log("WFC - Done");
+                play = false;
+                return false;
+
+            case WFCRunner.StepResult.NoSolution:
+                Debug.LogWarning($"WFC - Tried to collapse but had no solutions: {point}");
+                play = false;
+                return false;
+
+            default:
+                Debug.LogError($"Unknown result: {point}");
+                return false;
+        }
+    }
+}
+
+public enum CandidateSelection
+{
+    Random,
+    Ordered,
+    FurthestFromCenter
+}
+
+public enum TileSelection
+{
+    Random,
+    Ordered,
+    Weighted
+}
+
+public struct WfcTileData
+{
+    // used to identify the tile
+    public int id;
+
+    // used to change the frequency of the tile
+    public float weight;
+
+    // connectors of the tile, used to see which pieces can be around it
+    public List<ConnectorDef> left;
+    public List<ConnectorDef> right;
+    public List<ConnectorDef> top;
+    public List<ConnectorDef> bottom;
+}
+
+public class WFCRunner
+{
+#nullable enable
+
+    int width;
+    int height;
+    CandidateSelection candidateSelection;
+    TileSelection tileSelection;
+    List<WfcTileData> tiles;
+
+    internal HashSet<int>[][] cells;
+    BitArray[] collapsed;
+
+    Stack<Point> pStack = new();
+
+    List<Point> candidateList = new();
+    List<Point> furthestList = new();
+    HashSet<int> neighborConnectors = new();
+    HashSet<int> foundConnectors = new();
+
+    public Action<RectInt>? OnRectChanged;
+
+    public CandidateSelection CandidateSelection
+    {
+        get => candidateSelection;
+        set => candidateSelection = value;
+    }
+
+    public TileSelection TileSelection
+    {
+        get => tileSelection;
+        set => tileSelection = value;
+    }
+
+    public WFCRunner(int width, int height, List<WfcTileData> tiles)
+    {
+        this.width = width;
+        this.height = height;
+        this.tiles = tiles;
+
+        this.cells = new HashSet<int>[height][];
+        this.collapsed = new BitArray[height];
+
+        for (int y = 0; y < height; y++)
+        {
+            collapsed[y] = new BitArray(width);
+
+            var cellRow = new HashSet<int>[width];
+            cells[y] = cellRow;
+
+            for (int x = 0; x < width; x++)
+            {
+                cellRow[x] = new HashSet<int>();
+            }
+        }
+    }
+
+    public void SetCell(int x, int y, int tile)
+    {
         if (IsCollapsed(x, y))
             UnCollapse(x, y);
 
@@ -127,110 +298,52 @@ public class WFC : MonoBehaviour
         return x >= 0 && y >= 0 && x < width && y < height;
     }
 
-    [MakeButton]
-    void AlignCamera()
+    public void Reset()
     {
-        Camera camera = Camera.main;
-        camera.transform.position = new Vector3(width / 2, height / 2, -1);
-        camera.orthographicSize = Math.Max(width, height) / 2;
-    }
-
-    [MakeButton]
-    void ClearGrid()
-    {
-        cells = new HashSet<WFCTile>[height][];
-        collapsed = new BitArray[height];
-
         pStack.Clear();
 
-        HashSet<WFCTile> seed = tiles.ToHashSet();
+        int[] seed = tiles.Select(t => t.id).ToArray();
 
         for (int y = 0; y < height; y++)
         {
-            collapsed[y] = new BitArray(width);
+            collapsed[y].SetAll(false);
 
-            var cellRow = new HashSet<WFCTile>[width];
-            cells[y] = cellRow;
+            HashSet<int>[] cellRow = cells[y];
             for (int x = 0; x < width; x++)
             {
-                cellRow[x] = new HashSet<WFCTile>(seed);
-                OnCellChanged?.Invoke(x, y, -1);
+                HashSet<int> cell = cellRow[x];
+                cell.Clear();
+
+                foreach (int id in seed)
+                {
+                    cell.Add(id);
+                }
             }
         }
+        OnRectChanged?.Invoke(new RectInt(0, 0, width, height));
     }
 
-    void NullCheck()
+    public enum StepResult
     {
-        if (cells == null || collapsed == null)
-            ClearGrid();
+        OneStep,
+        Complete,
+        NoSolution,
     }
 
-    [MakeButton(false)]
-    void Play()
+    public StepResult Step(out Point point)
     {
-        if (!Application.isPlaying)
+        point = GetLowestEntropy();
+        if (point == new Point(-1, -1))
         {
-            Debug.Log("WFC - Can only play in play mode");
-
-            return;
+            return StepResult.Complete;
         }
 
-        play = true;
-    }
-
-    [MakeButton]
-    private void Pause()
-    {
-        play = false;
-    }
-
-    void TryPlay()
-    {
-        if (!play)
-            return;
-
-        timer += Time.deltaTime;
-
-        // this is bad if one step actually takes longer to do than timePerStep, can we check that using some system time?
-        while (play && timer >= timePerStep)
+        if (Collapse(point))
         {
-            timer -= timePerStep;
-
-            Step();
+            Propagate(point);
+            return StepResult.OneStep;
         }
-    }
-
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-            play = !play;
-
-        TryPlay();
-    }
-
-    [MakeButton]
-    void Step()
-    {
-        if (!Application.isPlaying)
-        {
-            Debug.Log("WFC - Can only step in play mode");
-
-            return;
-        }
-
-        NullCheck();
-
-        Point coords = GetLowestEntropy();
-
-        if (coords == new Point(-1, -1))
-        {
-            play = false;
-            Debug.Log("WFC - Done");
-            return;
-        }
-
-        Collapse(coords);
-        Propagate(coords);
+        return StepResult.NoSolution;
     }
 
     Point GetLowestEntropy()
@@ -299,17 +412,17 @@ public class WFC : MonoBehaviour
         return furthestList[Random.Range(0, furthestList.Count)];
     }
 
-    WFCTile Weighted(HashSet<WFCTile> tiles)
+    int Weighted(HashSet<int> tiles)
     {
         float[] min = new float[tiles.Count];
         float[] max = new float[tiles.Count];
 
         float sum = 0;
         int i = 0;
-        foreach (WFCTile tile in tiles)
+        foreach (int tile in tiles)
         {
             min[i] = sum;
-            sum += tile.weight;
+            sum += this.tiles[tile].weight;
             max[i] = sum;
             i++;
         }
@@ -317,7 +430,7 @@ public class WFC : MonoBehaviour
         float randomNum = Random.Range(0, sum);
 
         i = 0;
-        foreach (WFCTile tile in tiles)
+        foreach (int tile in tiles)
         {
             if (min[i] <= randomNum && max[i] >= randomNum)
             {
@@ -331,37 +444,34 @@ public class WFC : MonoBehaviour
         return tiles.ElementAt(Random.Range(0, tiles.Count));
     }
 
-    void Collapse(Point p) => Collapse(p.x, p.y);
+    bool Collapse(Point p) => Collapse(p.x, p.y);
 
-    void Collapse(int x, int y)
+    bool Collapse(int x, int y)
     {
         //Debug.Log("Collapse(" + p.x + ", " + p.y + ")");
-        HashSet<WFCTile> superPositions = cells[y][x];
-
+        HashSet<int> superPositions = cells[y][x];
         if (superPositions.Count == 0)
         {
-            Debug.Log($"WFC - Tried to collapse but had no solutions. {x} {y}");
-            play = false;
-            return;
+            return false;
         }
 
-        WFCTile tile = tileSelection switch
+        int tile = tileSelection switch
         {
             TileSelection.Random => superPositions.ElementAt(Random.Range(0, superPositions.Count)),
             TileSelection.Ordered => superPositions.First(),
             TileSelection.Weighted => Weighted(superPositions),
-            _ => throw new Exception("Invalid tile selection."),
+            _ => 0,
         };
 
         superPositions.Clear();
         superPositions.Add(tile);
         collapsed[y][x] = true;
-        OnCellChanged?.Invoke(x, y, tile.id);
+        return true;
     }
 
     void UnCollapse(int x, int y)
     {
-        cells[y][x] = tiles.ToHashSet();
+        cells[y][x] = tiles.Select(t => t.id).ToHashSet();
         collapsed[y][x] = false;
 
         foreach (Point dir in ValidDirs(x, y))
@@ -372,10 +482,6 @@ public class WFC : MonoBehaviour
                 pStack.Push(p);
         }
     }
-
-    Stack<Point> pStack = new();
-    HashSet<int> neighborConnectors = new();
-    HashSet<int> foundConnectors = new();
 
     void Propagate(Point p)
     {
@@ -407,70 +513,15 @@ public class WFC : MonoBehaviour
         return new ValidDirEnumerator(x, y, width, height);
     }
 
-    struct ValidDirEnumerator : IEnumerable<Point>, IEnumerator<Point>
+    internal HashSet<int>[] GetRow(int y)
     {
-        private int _state;
-        private readonly int _x;
-        private readonly int _y;
-        private readonly int _w;
-        private readonly int _h;
-
-        public ValidDirEnumerator(int x, int y, int width, int height)
-        {
-            _x = x;
-            _y = y;
-            _w = width;
-            _h = height;
-            _state = 0;
-        }
-
-        public readonly Point Current => _state switch
-        {
-            1 => new Point(-1, 0),
-            2 => new Point(0, -1),
-            3 => new Point(1, 0),
-            4 => new Point(0, 1),
-            _ => new Point(),
-        };
-
-        readonly object IEnumerator.Current => Current;
-
-        public readonly void Dispose()
-        {
-        }
-
-        public readonly ValidDirEnumerator GetEnumerator() => this;
-
-        public bool MoveNext()
-        {
-            while (_state < 4)
-            {
-                _state++;
-                switch (_state)
-                {
-                    case 1 when _x > 0:
-                    case 2 when _y > 0:
-                    case 3 when _x < _w - 1:
-                    case 4 when _y < _h - 1:
-                        return true;
-                }
-            }
-            return false;
-        }
-
-        public readonly void Reset()
-        {
-        }
-
-        readonly IEnumerator<Point> IEnumerable<Point>.GetEnumerator() => GetEnumerator();
-
-        readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        return cells[y];
     }
 
     /// <summary>
     /// List possible outcomes for cell at point <paramref name="p"/>
     /// </summary>
-    HashSet<WFCTile> GetCell(Point p)
+    internal HashSet<int> GetCell(Point p)
     {
         return cells[p.y][p.x];
     }
@@ -478,19 +529,20 @@ public class WFC : MonoBehaviour
     /// <summary>
     /// List of valid neighbors in <paramref name="dir"/> for cell at point <paramref name="p"/>
     /// </summary>
-    void IntersectNeighbors(Point p, Point dir, HashSet<WFCTile> neighborPossibilities)
+    void IntersectNeighbors(Point p, Point dir, HashSet<int> neighborPossibilities)
     {
         neighborConnectors.Clear();
         foundConnectors.Clear();
 
-        foreach (WFCTile possibility in GetCell(p))
+        foreach (int tileId in GetCell(p))
         {
-            List<ConnectorDef> connectors = (dir.x, dir.y) switch
+            WfcTileData tile = tiles[tileId];
+            List<ConnectorDef>? connectors = (dir.x, dir.y) switch
             {
-                (1, 0) => possibility.right,
-                (-1, 0) => possibility.left,
-                (0, 1) => possibility.top,
-                (0, -1) => possibility.bottom,
+                (1, 0) => tile.right,
+                (-1, 0) => tile.left,
+                (0, 1) => tile.top,
+                (0, -1) => tile.bottom,
                 _ => null,
             };
             if (connectors == null)
@@ -504,9 +556,10 @@ public class WFC : MonoBehaviour
             }
         }
 
-        foreach (WFCTile tile in neighborPossibilities)
+        foreach (int tileId in neighborPossibilities)
         {
-            List<ConnectorDef> connectors = (dir.x, dir.y) switch
+            WfcTileData tile = tiles[tileId];
+            List<ConnectorDef>? connectors = (dir.x, dir.y) switch
             {
                 (1, 0) => tile.left,
                 (-1, 0) => tile.right,
@@ -523,15 +576,13 @@ public class WFC : MonoBehaviour
             {
                 if (neighborConnectors.Contains(connector.TileId))
                 {
-                    foundConnectors.Add(tile.id);
+                    foundConnectors.Add(tileId);
                 }
             }
         }
 
-        neighborPossibilities.IntersectWith(foundConnectors.Select(id => tiles[id]));
+        neighborPossibilities.IntersectWith(foundConnectors);
     }
 
-    bool IsCollapsed(Point p) => IsCollapsed(p.x, p.y);
-
-    bool IsCollapsed(int x, int y) => collapsed[y].Get(x);
+    public bool IsCollapsed(int x, int y) => collapsed[y].Get(x);
 }

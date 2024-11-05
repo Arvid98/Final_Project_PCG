@@ -102,10 +102,9 @@ public class StartMap : MonoBehaviour
                 int tileId = grid[x, y];
                 WFCTile tile = GetTileById(tileId);
 
-
                 if (tile != null && tile != baseTile)
                 {
-                    wFC.SetCell(x, y, tile);
+                    wFC.runner.SetCell(x, y, tile.id);
                 }
             }
         }
