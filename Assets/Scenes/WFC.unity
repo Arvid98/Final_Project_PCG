@@ -151,8 +151,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 258e06c35795f1440a14ba02c5bc7321, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  width: 24
-  height: 24
+  width: 128
+  height: 128
   candidateSelection: 2
   tileSelection: 0
   timePerStep: 0.005

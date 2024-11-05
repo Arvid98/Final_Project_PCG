@@ -31,6 +31,7 @@ public class WFCDisplay : MonoBehaviour
         NullCheck();
         wfc.OnRectChanged += OnRectChanged;
     }
+
     void OnDisable()
     {
         wfc.OnRectChanged -= OnRectChanged;
@@ -100,7 +101,7 @@ public class WFCDisplay : MonoBehaviour
                 int x = rx + rect.x;
 
                 HashSet<int> cell = row[x];
-                int id = cell.Count > 0 ? cell.First() : -1;
+                int id = cell.Count == 1 ? cell.First() : -1;
 
                 if (texture != null)
                 {

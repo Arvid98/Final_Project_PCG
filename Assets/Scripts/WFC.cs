@@ -23,7 +23,7 @@ public class WFC : MonoBehaviour
     /// <summary>
     /// Parameters: x, y, id
     /// </summary>
-    public Action<RectInt>? OnRectChanged;
+    public event Action<RectInt>? OnRectChanged;
     public int Width => width;
     public int Height => height;
     public WFCTile[]? Tiles { get { return tiles; } set { tiles = value; } }
@@ -107,6 +107,8 @@ public class WFC : MonoBehaviour
         runner.TileSelection = tileSelection;
 
         runner.Reset();
+
+        OnRectChanged?.Invoke(new RectInt(0, 0, width, height));
     }
 
     [MakeButton(false)]
@@ -240,8 +242,6 @@ public class WFCRunner
     HashSet<int> neighborConnectors = new();
     HashSet<int> foundConnectors = new();
 
-    public Action<RectInt>? OnRectChanged;
-
     public CandidateSelection CandidateSelection
     {
         get => candidateSelection;
@@ -320,7 +320,6 @@ public class WFCRunner
                 }
             }
         }
-        OnRectChanged?.Invoke(new RectInt(0, 0, width, height));
     }
 
     public enum StepResult
