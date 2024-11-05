@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 public class TileRuleMaker : MonoBehaviour
 {
@@ -86,13 +87,15 @@ public class TileRuleMaker : MonoBehaviour
     {
         var m = FindAnyObjectByType<WFCDisplay>();
         var ta = FindAnyObjectByType<TextureArrayList>();
-        Sprite[] sprites = new Sprite[ta.Count];
+        TileBase[] sprites = new TileBase[ta.Count];
 
         for (int i = 0; i < sprites.Length; i++)
         {
-            sprites[i] = Sprite.Create(ta.List[i], new Rect(0,0,5,5), Vector2.zero);
+            Tile tile = ScriptableObject.CreateInstance<Tile>();
+            tile.sprite = Sprite.Create(ta.List[i], new Rect(0, 0, 5, 5), Vector2.zero, 5);
+            sprites[i] = tile; 
         }
-        m.sprites = sprites;
+        m.tiles = sprites;
     }
 
     [MakeButton]

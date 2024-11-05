@@ -1,11 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class WFCDisplay : MonoBehaviour
+public class WFCDisplayCopy : MonoBehaviour
 {
     [SerializeField]
     public TileBase[] tiles;
@@ -72,6 +71,14 @@ public class WFCDisplay : MonoBehaviour
 
         rend.material.mainTexture = texture;
     }
+    public static RectInt Union(RectInt a, RectInt b)
+    {
+        int x1 = Math.Min(a.x, b.x);
+        int x2 = Math.Max(a.x + a.width, b.x + b.width);
+        int y1 = Math.Min(a.y, b.y);
+        int y2 = Math.Max(a.y + a.height, b.y + b.height);
+        return new RectInt(x1, y1, x2 - x1, y2 - y1);
+    }
 
     void Update()
     {
@@ -83,23 +90,18 @@ public class WFCDisplay : MonoBehaviour
             texture.Apply();
         }
 
-        if (changedPoints.Count > 0)
+        if (changedRects.Count > 0)
         {
-            foreach(var pair in changedPoints)
+            RectInt bounds = changedRects[0];
+            foreach (RectInt rect in changedRects)
             {
-                int x = pair.Key.x;
-                int y = pair.Key.y;
-                int id = pair.Value;
-                TileBase tile = null;
-                if ((uint)id < (uint)tiles.Length)
-                {
-                    tile = tiles[id];
-                }
-                tilemap.SetTile(new Vector3Int(x, y, 0), tile);
+                bounds = Union(bounds, rect);
             }
 
-            Debug.Log("Refreshing " + changedPoints.Count + " tiles");
-            changedPoints.Clear();
+            RefreshTiles(bounds);
+            changedRects.Clear();
+
+            Debug.Log("Refreshing " + bounds);
         }
     }
 
@@ -109,10 +111,18 @@ public class WFCDisplay : MonoBehaviour
         texture.SetPixel(x, y, color);
     }
 
-    Dictionary<Point, int> changedPoints = new();
+    List<RectInt> changedRects = new();
     
     void OnRectChanged(RectInt rect)
     {
+        changedRects.Add(rect);
+    }
+
+    void RefreshTiles(RectInt rect)
+    {
+        TileBase[] tileBlock = new TileBase[rect.width * rect.height];
+        Array.Fill(tileBlock, defaultTile);
+
         for (int ry = 0; ry < rect.height; ry++)
         {
             int y = ry + rect.y;
@@ -134,7 +144,11 @@ public class WFCDisplay : MonoBehaviour
                         e.MoveNext();
                         id = e.Current;
 
-                        changedPoints[new Point(x, y)] = id;
+                        if ((uint)id < (uint)tiles.Length)
+                        {
+                            TileBase tile = tiles[id];
+                            tileBlock[ry * rect.width + rx] = tile;
+                        }
                     }
                 }
 
@@ -149,5 +163,7 @@ public class WFCDisplay : MonoBehaviour
                 }
             }
         }
+
+        tilemap.SetTilesBlock(new BoundsInt(new Vector3Int(rect.x, rect.y, 0), new Vector3Int(rect.width, rect.height, 1)), tileBlock);
     }
 }

@@ -91,7 +91,7 @@ public class WFC : MonoBehaviour
     }
 
     [MakeButton]
-    void ClearGrid()
+    public void ClearGrid()
     {
         runner = new WFCRunner(width, height, tiles.Select(t => new WfcTileData()
         {
@@ -108,6 +108,11 @@ public class WFC : MonoBehaviour
 
         runner.Reset();
 
+        RefreshAllTiles();
+    }
+
+    public void RefreshAllTiles()
+    {
         OnRectChanged?.Invoke(new RectInt(0, 0, width, height));
     }
 
@@ -150,8 +155,14 @@ public class WFC : MonoBehaviour
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if (!play)
+            {
+                AlignCamera();
+                ClearGrid();
+            }
             play = !play;
-
+        }
         TryPlay();
     }
 
@@ -411,10 +422,16 @@ public class WFCRunner
         return furthestList[Random.Range(0, furthestList.Count)];
     }
 
+    float[] min = new float[64];
+    float[] max = new float[64];
+
     int Weighted(HashSet<int> tiles)
     {
-        float[] min = new float[tiles.Count];
-        float[] max = new float[tiles.Count];
+        if (min.Length < tiles.Count)
+            min = new float[(tiles.Count + 1023) / 1024 * 1024];
+
+        if (max.Length < tiles.Count)
+            max = new float[(tiles.Count + 1023) / 1024 * 1024];
 
         float sum = 0;
         int i = 0;
@@ -512,9 +529,14 @@ public class WFCRunner
         return new ValidDirEnumerator(x, y, width, height);
     }
 
-    internal HashSet<int>[] GetRow(int y)
+    internal HashSet<int>[] GetCellRow(int y)
     {
         return cells[y];
+    }
+
+    internal BitArray GetCollapsedRow(int y)
+    {
+        return collapsed[y];
     }
 
     /// <summary>

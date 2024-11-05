@@ -61,7 +61,7 @@ public class StartMap : MonoBehaviour
     [MakeButton]
     public void Setup()
     {
-        wFC.Clear();
+        wFC.ClearGrid();
         Clear();
         
         SetRandomPlayerStartPositions();
@@ -110,6 +110,8 @@ public class StartMap : MonoBehaviour
                 }
             }
         }
+
+        wFC.RefreshAllTiles();
     }
     public void Clear()
     {
