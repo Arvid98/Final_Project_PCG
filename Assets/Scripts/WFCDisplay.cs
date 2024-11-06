@@ -82,25 +82,6 @@ public class WFCDisplay : MonoBehaviour
             textureHasChanged = false;
             texture.Apply();
         }
-
-        if (changedPoints.Count > 0)
-        {
-            foreach(var pair in changedPoints)
-            {
-                int x = pair.Key.x;
-                int y = pair.Key.y;
-                int id = pair.Value;
-                TileBase tile = null;
-                if ((uint)id < (uint)tiles.Length)
-                {
-                    tile = tiles[id];
-                }
-                tilemap.SetTile(new Vector3Int(x, y, 0), tile);
-            }
-
-            Debug.Log("Refreshing " + changedPoints.Count + " tiles");
-            changedPoints.Clear();
-        }
     }
 
     void SetPixel(int x, int y, Color color)
@@ -109,8 +90,6 @@ public class WFCDisplay : MonoBehaviour
         texture.SetPixel(x, y, color);
     }
 
-    Dictionary<Point, int> changedPoints = new();
-    
     void OnRectChanged(RectInt rect)
     {
         for (int ry = 0; ry < rect.height; ry++)
@@ -133,10 +112,15 @@ public class WFCDisplay : MonoBehaviour
                         var e = cell.GetEnumerator();
                         e.MoveNext();
                         id = e.Current;
-
-                        changedPoints[new Point(x, y)] = id;
                     }
                 }
+
+                TileBase tile = defaultTile;
+                if ((uint)id < (uint)tiles.Length)
+                {
+                    tile = tiles[id];
+                }
+                tilemap.SetTile(new Vector3Int(x, y, 0), tile);
 
                 if (texture != null)
                 {
